@@ -6,17 +6,20 @@ public class BlockMeshGenerator : MonoBehaviour
     public Block Block { get; set; }
     [SerializeField] private World world;
     public World World { get; set; }
+
     private MeshFilter meshFilter;
 
     void Start()
     {
-        if (world == null) world = FindFirstObjectByType<World>();
-        meshFilter = GetComponent<MeshFilter>();
+        if (world == null)
+        {
+            World = FindFirstObjectByType<World>();
+        }
     }
 
     public void GenerateMesh()
     {
-        Mesh mesh = new Mesh();
+        meshFilter = GetComponent<MeshFilter>();
         Vector3[] vertices = new Vector3[24]; // 6 faces * 4 vertex each face
         int[] triangles = new int[36]; // 6 faces * 2 triangles per face * 3 vertex
 
@@ -50,16 +53,14 @@ public class BlockMeshGenerator : MonoBehaviour
         for (int i = 0; i < directions.Length; i++)
         {
             Vector3Int dir = directions[i];
-            Debug.Log(directions.Length);
-            Debug.Log(world);
-            if (block.IsAdjacentBlockSolid(dir, world)) continue;
+            if (Block.IsAdjacentBlockSolid(dir, World)) continue;
 
-            Vector3 offset = block.transform.position;
+            Vector3 offset = Block.transform.position;
 
             int[] faceVertices = GetFaceVertices(i);
             for (int j = 0; j < 4; j++)
             {
-                vertices[vertexIndex++] = cubeVertices[faceVertices[j]] + offset;
+                vertices[vertexIndex++] = cubeVertices[faceVertices[j]];
             }
 
             int[] faceTriangles = GetFaceTriangles();
@@ -69,8 +70,12 @@ public class BlockMeshGenerator : MonoBehaviour
             }
         }
 
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        Mesh mesh = new Mesh()
+        {
+            vertices = vertices,
+            triangles = triangles
+        };
+
         mesh.RecalculateNormals();
         meshFilter.mesh = mesh;
     }
@@ -80,7 +85,7 @@ public class BlockMeshGenerator : MonoBehaviour
     {
         switch (faceIndex)
         {
-            // *Numbers must reference the cubeVertices in an anticlockwise order
+            // *Numbers must reference the cubeVertices in an anti-clockwise order
             case 0: return new int[] { 3, 2, 6, 7 }; // Up
             case 1: return new int[] { 1, 0, 4, 5 }; // Down
             case 2: return new int[] { 4, 0, 3, 7 }; // Left

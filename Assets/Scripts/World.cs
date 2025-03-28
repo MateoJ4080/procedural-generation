@@ -21,7 +21,7 @@ public class World : MonoBehaviour
             {
                 for (int z = 0; z < depth; z++)
                 {
-                    Debug.Log($"<color=green>Block instantiated at (<color=red>{x}, <color=green>{y}, <color=blue>{z}<color=green>)");
+                    Debug.Log($"<color=yellow>Block instantiated at (<color=red>{x}, <color=green>{y}, <color=cyan>{z}<color=yellow>)");
                     GameObject blockObj = Instantiate(blockPrefab, new Vector3(x, y, z), Quaternion.identity, transform);
                     Block block = blockObj.GetComponent<Block>();
                     block.position = new Vector3Int(x, y, z);
@@ -29,7 +29,6 @@ public class World : MonoBehaviour
 
                     if (blockObj.TryGetComponent<BlockMeshGenerator>(out var meshGen))
                     {
-                        Debug.Log(meshGen);
                         meshGen.Block = block;
                         meshGen.World = this;
                         meshGen.GenerateMesh();
