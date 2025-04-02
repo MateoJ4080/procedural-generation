@@ -38,6 +38,11 @@ public class World : MonoBehaviour
         }
     }
 
+    public void RefreshAdjacentBlocks()
+    {
+
+    }
+
     public Block GetBlockAt(Vector3Int position)
     {
         if (position.x >= 0 && position.x < width &&

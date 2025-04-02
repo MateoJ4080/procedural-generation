@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 7565169145487906723}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.300844, y: 4.74905, z: 9.788001}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -116,3 +116,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   block: {fileID: 4470280505135089963}
   world: {fileID: 0}
+  texture: {fileID: 2800000, guid: 5fadc6a0693e4444ca21d62630ad0076, type: 3}
