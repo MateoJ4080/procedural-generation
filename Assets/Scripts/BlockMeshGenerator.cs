@@ -67,6 +67,9 @@ public class BlockMeshGenerator : MonoBehaviour
                 vertices[vertexIndex++] = cubeVertices[faceVertices[j]];
             }
 
+            Vector3Int dir = directions[i];
+            if (Block.IsAdjacentBlockSolid(dir, World)) continue;
+
             int[] faceTriangles = GetFaceTriangles();
             for (int j = 0; j < 6; j++)
             {

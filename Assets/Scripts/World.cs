@@ -21,15 +21,24 @@ public class World : MonoBehaviour
             {
                 for (int z = 0; z < depth; z++)
                 {
-                    Debug.Log($"<color=yellow>Block instantiated at (<color=red>{x}, <color=green>{y}, <color=cyan>{z}<color=yellow>)");
                     GameObject blockObj = Instantiate(blockPrefab, new Vector3(x, y, z), Quaternion.identity, transform);
                     Block block = blockObj.GetComponent<Block>();
                     block.position = new Vector3Int(x, y, z);
                     blocks[x, y, z] = block;
+                }
+            }
+        }
 
-                    if (blockObj.TryGetComponent<BlockMeshGenerator>(out var meshGen))
+        // Generate mesh after all blocks are instantiated to avoid unnecesary faces-rendering
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int z = 0; z < depth; z++)
+                {
+                    if (blocks[x, y, z].TryGetComponent<BlockMeshGenerator>(out var meshGen))
                     {
-                        meshGen.Block = block;
+                        meshGen.Block = blocks[x, y, z];
                         meshGen.World = this;
                         meshGen.GenerateMesh();
                     }
@@ -37,7 +46,6 @@ public class World : MonoBehaviour
             }
         }
     }
-
     public void RefreshAdjacentBlocks()
     {
 
