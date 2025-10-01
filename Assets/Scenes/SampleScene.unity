@@ -406,9 +406,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08b040f9b6d41fa4ea6630678535aa56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 10
-  height: 5
-  depth: 10
+  width: 20
+  height: 3
+  depth: 20
   blockPrefab: {fileID: 7565169145487906723, guid: 680194840e536c14b8e96c553a564318, type: 3}
 --- !u!4 &729497255
 Transform:
