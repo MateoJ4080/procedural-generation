@@ -1,18 +1,7 @@
-using UnityEditor.Experimental.GraphView;
-using UnityEngine;
+using Unity.Entities;
 
-public class Block : MonoBehaviour
+public struct Block : IBufferElementData
 {
-    public enum BlockType { Air, Solid }
-
-    public BlockType blockType = BlockType.Solid;
-
-    // World coordinates    
-    public Vector3Int position;
-
-    public bool IsAdjacentBlockSolid(Vector3Int direction, World world)
-    {
-        Block adjacentBlock = world.GetBlockAt(position + direction);
-        return adjacentBlock != null && adjacentBlock.blockType == BlockType.Solid;
-    }
+    public byte Type;
+    public bool Visible;
 }
