@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,6 +12,8 @@ public partial struct ChunkGenerationSystem : ISystem
 {
     private Entity playerEntity;
     private bool playerFound;
+    private TerrainConfig lastConfig;
+
 
     private NativeHashMap<int2, Entity> chunks;
 
@@ -21,6 +24,15 @@ public partial struct ChunkGenerationSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
+        if (!SystemAPI.TryGetSingleton<TerrainConfig>(out var config))
+            return;
+
+        if (!config.Equals(lastConfig))
+        {
+            RegenerateAllChunks(ref state, config);
+            lastConfig = config;
+        }
+
         if (!playerFound)
         {
             foreach (var (_, entity) in SystemAPI.Query<RefRO<PlayerTag>>().WithEntityAccess())
@@ -64,11 +76,11 @@ public partial struct ChunkGenerationSystem : ISystem
                     buffer.ResizeUninitialized(16 * 16 * 16);
 
                     // More information about these parameters on the README!
-                    float frequency = 0.03f;   // Controls how “wide” or “narrow” the hills are
-                    float amplitude = 0.2f;    // Maximum height of the terrain
-                    int octaves = 3;           // Number of noise layers
-                    float persistence = 0.5f;  // Influence of each successive layer
-                    float lacunarity = 2f;     // Frequency multiplier per layer
+                    float frequency = config.Frequency;   // Controls how "wide" or "narrow" the hills are
+                    float amplitude = config.Amplitude;    // Maximum height of the terrain
+                    int octaves = config.Octaves;           // Number of noise layers
+                    float persistence = config.Persistence;  // Influence of each successive layer
+                    float lacunarity = config.Lacunarity;     // Frequency multiplier per layer
 
                     for (int x = 0; x < 16; x++)
                     {
@@ -88,7 +100,7 @@ public partial struct ChunkGenerationSystem : ISystem
                                 freq *= lacunarity;
                             }
 
-                            height = height * 0.5f + 0.5f; // normaliza a 0-1
+                            height = height * 0.5f + 0.5f; // normalizes to 0-1
                             int maxY = (int)math.floor(height * 16);
 
                             for (int y = 0; y < 16; y++)
@@ -98,7 +110,6 @@ public partial struct ChunkGenerationSystem : ISystem
                             }
                         }
                     }
-
 
                     chunks.TryAdd(chunkCoord, entity);
                 }
@@ -111,4 +122,13 @@ public partial struct ChunkGenerationSystem : ISystem
         if (chunks.IsCreated) chunks.Dispose();
     }
 
+    private void RegenerateAllChunks(ref SystemState state, TerrainConfig config)
+    {
+        UnityEngine.Debug.Log("Regenerating chunks");
+        foreach (var entity in chunks.GetValueArray(Allocator.Temp))
+        {
+            state.EntityManager.DestroyEntity(entity);
+        }
+        chunks.Clear();
+    }
 }
