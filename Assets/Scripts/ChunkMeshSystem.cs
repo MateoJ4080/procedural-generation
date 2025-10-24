@@ -31,7 +31,6 @@ public partial class ChunkMeshSystem : SystemBase
 
     protected override void OnUpdate()
     {
-
         var ecb = new EntityCommandBuffer(Allocator.Temp);
         var meshesToAdd = new List<(Entity entity, Mesh mesh, RenderMeshArray renderArray)>();
 
@@ -93,13 +92,6 @@ public partial class ChunkMeshSystem : SystemBase
                 // Show mesh
                 var renderArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
 
-                ecb.AddComponent(entity, new LocalTransform
-                {
-                    Position = float3.zero,
-                    Rotation = quaternion.identity,
-                    Scale = 1f
-                });
-
                 meshesToAdd.Add((entity, mesh, renderArray));
 
                 // Debug
@@ -131,6 +123,10 @@ public partial class ChunkMeshSystem : SystemBase
         {
             var renderMeshArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { item.mesh });
             RenderMeshUtility.AddComponents(item.entity, EntityManager, desc, renderMeshArray, MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
+
+
+            var transform = EntityManager.GetComponentData<LocalTransform>(item.entity);
+            EntityManager.SetComponentData(item.entity, transform);
         }
         meshesToAdd.Clear();
     }
