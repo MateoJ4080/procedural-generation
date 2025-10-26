@@ -82,6 +82,7 @@ public partial struct ChunkGenerationSystem : ISystem
                     float persistence = config.Persistence;  // Influence of each successive layer
                     float lacunarity = config.Lacunarity;     // Frequency multiplier per layer
 
+                    // Define chunk blocks height - chunks are 16x16
                     for (int x = 0; x < 16; x++)
                     {
                         for (int z = 0; z < 16; z++)
@@ -91,13 +92,13 @@ public partial struct ChunkGenerationSystem : ISystem
 
                             float height = 0f;
                             float amp = amplitude;
-                            float freq = 1f;
+                            float octaveFreq = 1f;
 
                             for (int o = 0; o < octaves; o++)
                             {
-                                height += amp * noise.snoise(new float2(nx * freq, nz * freq));
+                                height += amp * noise.snoise(new float2(nx * octaveFreq, nz * octaveFreq));
                                 amp *= persistence;
-                                freq *= lacunarity;
+                                octaveFreq *= lacunarity;
                             }
 
                             height = height * 0.5f + 0.5f; // normalizes to 0-1
