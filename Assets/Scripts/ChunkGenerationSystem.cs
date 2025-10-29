@@ -1,11 +1,8 @@
-using System.Diagnostics;
-using System.Linq;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using Unity.VisualScripting;
 
 [BurstCompile]
 public partial struct ChunkGenerationSystem : ISystem
@@ -13,7 +10,6 @@ public partial struct ChunkGenerationSystem : ISystem
     private Entity playerEntity;
     private bool playerFound;
     private TerrainConfig lastConfig;
-
 
     private NativeHashMap<int2, Entity> chunks;
 
@@ -111,7 +107,6 @@ public partial struct ChunkGenerationSystem : ISystem
                             }
                         }
                     }
-
                     chunks.TryAdd(chunkCoord, entity);
                 }
             }

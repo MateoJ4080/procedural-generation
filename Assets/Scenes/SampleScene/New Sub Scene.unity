@@ -149,10 +149,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainConfigAuthoring
   frequency: 0.03
-  amplitude: 0.2
+  amplitude: 0.32
   octaves: 1
   persistence: 0.5
-  lacunarity: 2
+  lacunarity: -0.26
 --- !u!4 &11266649
 Transform:
   m_ObjectHideFlags: 0

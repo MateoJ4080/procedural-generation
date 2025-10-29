@@ -6,6 +6,7 @@ using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
+using Unity.Entities.UniversalDelegates;
 
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
@@ -17,15 +18,14 @@ public partial class ChunkMeshSystem : SystemBase
     protected override void OnCreate()
     {
         _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        var atlas = Resources.Load<Texture2D>("WSUUw");
+        _sharedMaterial.mainTexture = atlas;
 
-        if (_sharedMaterial == null)
-        {
-            Debug.LogError("Shader not found");
-        }
-        else
-        {
-            Debug.Log("Material created: " + _sharedMaterial.name);
-        }
+        if (atlas == null) Debug.Log("Atlas not found");
+        else Debug.Log("Atlas found");
+
+        if (_sharedMaterial == null) Debug.LogError("Shader not found");
+        else Debug.Log("Material created: " + _sharedMaterial.name);
     }
 
 
@@ -44,10 +44,10 @@ public partial class ChunkMeshSystem : SystemBase
             var depth = chunk.ValueRO.Depth;
 
             var vertices = new NativeList<float3>(Allocator.Temp);
+            var uvs = new NativeList<float2>(Allocator.Temp);
             var triangles = new NativeList<int>(Allocator.Temp);
             var normals = new NativeList<float3>(Allocator.Temp);
 
-            // 
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
@@ -66,7 +66,7 @@ public partial class ChunkMeshSystem : SystemBase
                         bool front = IsAir(buffer, width, height, depth, x, y, z + 1);
                         bool back = IsAir(buffer, width, height, depth, x, y, z - 1);
 
-                        AddVisibleFaces(vertices, triangles, normals, new int3(x, y, z),
+                        AddVisibleFaces(vertices, triangles, normals, uvs, new int3(x, y, z),
                             right, left, top, bottom, front, back);
                     }
                 }
@@ -82,12 +82,8 @@ public partial class ChunkMeshSystem : SystemBase
                 mesh.SetVertices(vertices.AsArray());
                 mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
                 mesh.SetNormals(normals.AsArray());
+                mesh.SetUVs(0, uvs.AsArray());
                 mesh.RecalculateBounds();
-
-                Debug.Log("Building mesh");
-                Debug.Log("Vertices: " + vertices.Length);
-                Debug.Log("Triangles: " + triangles.Length / 3);
-                Debug.Log("Normals: " + normals.Length);
 
                 // Show mesh
                 var renderArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
@@ -150,17 +146,27 @@ public partial class ChunkMeshSystem : SystemBase
     }
 
     private void AddVisibleFaces(NativeList<float3> vertices, NativeList<int> triangles,
-        NativeList<float3> normals, int3 pos,
+        NativeList<float3> normals, NativeList<float2> uvs, int3 pos,
         bool right, bool left, bool top, bool bottom, bool front, bool back)
     {
+        // "pos" is the position of the vertex at the bottom back left of the block, not its center
+        // Vertices of the faces might not be set in sync with the UVs. Verify later.
+
         int start = vertices.Length;
 
         if (right)
         {
-            vertices.Add(pos + new float3(1, 0, 0));
-            vertices.Add(pos + new float3(1, 1, 0));
-            vertices.Add(pos + new float3(1, 1, 1));
-            vertices.Add(pos + new float3(1, 0, 1));
+            vertices.Add(pos + new float3(1, 0, 0)); // Bottom left of this face
+            vertices.Add(pos + new float3(1, 1, 0)); // Top left
+            vertices.Add(pos + new float3(1, 1, 1)); // Top right
+            vertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+
+            // *Has to be in same order as vertices to have the right orientation*
+            uvs.Add(new float2(0.875f, 0.5f));
+            uvs.Add(new float2(0.875f, 0.75f));
+            uvs.Add(new float2(1, 0.75f));
+            uvs.Add(new float2(1, 0.5f));
+
             AddQuad(triangles, start);
             AddNormals(normals, new float3(1, 0, 0));
             start += 4;
@@ -168,10 +174,17 @@ public partial class ChunkMeshSystem : SystemBase
 
         if (left)
         {
-            vertices.Add(pos + new float3(0, 0, 1));
-            vertices.Add(pos + new float3(0, 1, 1));
-            vertices.Add(pos + new float3(0, 1, 0));
-            vertices.Add(pos + new float3(0, 0, 0));
+            vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
+            vertices.Add(pos + new float3(0, 1, 1)); // Top left
+            vertices.Add(pos + new float3(0, 1, 0)); // Top right
+            vertices.Add(pos + new float3(0, 0, 0)); // Bottom right
+
+            // *Has to be in same order as vertices to have the right orientation*
+            uvs.Add(new float2(0.875f, 0.5f));
+            uvs.Add(new float2(0.875f, 0.75f));
+            uvs.Add(new float2(1, 0.75f));
+            uvs.Add(new float2(1, 0.5f));
+
             AddQuad(triangles, start);
             AddNormals(normals, new float3(-1, 0, 0));
             start += 4;
@@ -179,10 +192,17 @@ public partial class ChunkMeshSystem : SystemBase
 
         if (top)
         {
-            vertices.Add(pos + new float3(0, 1, 0));
-            vertices.Add(pos + new float3(0, 1, 1));
-            vertices.Add(pos + new float3(1, 1, 1));
-            vertices.Add(pos + new float3(1, 1, 0));
+            vertices.Add(pos + new float3(0, 1, 0)); // Bottom left of this face
+            vertices.Add(pos + new float3(0, 1, 1)); // Top left
+            vertices.Add(pos + new float3(1, 1, 1)); // Top right
+            vertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+
+            // *Has to be in same order as vertices to have the right orientation*
+            uvs.Add(new float2(0.5f, 0.75f));
+            uvs.Add(new float2(0.5f, 1));
+            uvs.Add(new float2(0.625f, 1));
+            uvs.Add(new float2(0.625f, 0.75f));
+
             AddQuad(triangles, start);
             AddNormals(normals, new float3(0, 1, 0));
             start += 4;
@@ -190,10 +210,17 @@ public partial class ChunkMeshSystem : SystemBase
 
         if (bottom)
         {
-            vertices.Add(pos + new float3(0, 0, 1));
-            vertices.Add(pos + new float3(0, 0, 0));
-            vertices.Add(pos + new float3(1, 0, 0));
-            vertices.Add(pos + new float3(1, 0, 1));
+            vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
+            vertices.Add(pos + new float3(0, 0, 0)); // Top left
+            vertices.Add(pos + new float3(1, 0, 0)); // Top right
+            vertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+
+            // *Has to be in same order as vertices to have the right orientation*
+            uvs.Add(new float2(0.875f, 0.5f));
+            uvs.Add(new float2(0.875f, 0.75f));
+            uvs.Add(new float2(1, 0.75f));
+            uvs.Add(new float2(1, 0.5f));
+
             AddQuad(triangles, start);
             AddNormals(normals, new float3(0, -1, 0));
             start += 4;
@@ -201,10 +228,17 @@ public partial class ChunkMeshSystem : SystemBase
 
         if (front)
         {
-            vertices.Add(pos + new float3(0, 0, 1));
-            vertices.Add(pos + new float3(1, 0, 1));
-            vertices.Add(pos + new float3(1, 1, 1));
-            vertices.Add(pos + new float3(0, 1, 1));
+            vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
+            vertices.Add(pos + new float3(1, 0, 1)); // Top left
+            vertices.Add(pos + new float3(1, 1, 1)); // Top right
+            vertices.Add(pos + new float3(0, 1, 1)); // Bottom right
+
+            // *Has to be in same order as vertices to have the right orientation*
+            uvs.Add(new float2(0.875f, 0.5f));
+            uvs.Add(new float2(0.875f, 0.75f));
+            uvs.Add(new float2(1, 0.75f));
+            uvs.Add(new float2(1, 0.5f));
+
             AddQuad(triangles, start);
             AddNormals(normals, new float3(0, 0, 1));
             start += 4;
@@ -212,10 +246,17 @@ public partial class ChunkMeshSystem : SystemBase
 
         if (back)
         {
-            vertices.Add(pos + new float3(1, 0, 0));
-            vertices.Add(pos + new float3(0, 0, 0));
-            vertices.Add(pos + new float3(0, 1, 0));
-            vertices.Add(pos + new float3(1, 1, 0));
+            vertices.Add(pos + new float3(1, 0, 0)); // Bottom left of this face
+            vertices.Add(pos + new float3(0, 0, 0)); // Top left
+            vertices.Add(pos + new float3(0, 1, 0)); // Top right
+            vertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+
+            // *Has to be in same order as vertices to have the right orientation*
+            uvs.Add(new float2(0.875f, 0.5f));
+            uvs.Add(new float2(0.875f, 0.75f));
+            uvs.Add(new float2(1, 0.75f));
+            uvs.Add(new float2(1, 0.5f));
+
             AddQuad(triangles, start);
             AddNormals(normals, new float3(0, 0, -1));
         }
