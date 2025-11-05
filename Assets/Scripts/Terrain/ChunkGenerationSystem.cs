@@ -7,8 +7,9 @@ using Unity.Transforms;
 [BurstCompile]
 public partial struct ChunkGenerationSystem : ISystem
 {
-    private Entity playerEntity;
-    private bool playerFound;
+    private Entity managerEntity;
+    private bool managerFound;
+
     private TerrainConfig lastConfig;
 
     private NativeHashMap<int2, Entity> chunks;
@@ -29,23 +30,23 @@ public partial struct ChunkGenerationSystem : ISystem
             lastConfig = config;
         }
 
-        if (!playerFound)
+        if (!managerFound)
         {
-            foreach (var (_, entity) in SystemAPI.Query<RefRO<PlayerTag>>().WithEntityAccess())
+            foreach (var (_, entity) in SystemAPI.Query<RefRO<PlayerTracker>>().WithEntityAccess())
             {
-                playerEntity = entity;
-                playerFound = true;
+                managerEntity = entity;
+                managerFound = true;
                 break;
             }
 
-            if (!playerFound)
+            if (!managerFound)
             {
                 UnityEngine.Debug.Log("Player doesn't exist yet and chunk creation depends on its existence");
                 return;
             }
         }
 
-        float3 playerPos = SystemAPI.GetComponent<LocalTransform>(playerEntity).Position;
+        float3 playerPos = SystemAPI.GetComponent<PlayerTracker>(managerEntity).playerPosition;
         int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
 
         int loadRadius = 2;
