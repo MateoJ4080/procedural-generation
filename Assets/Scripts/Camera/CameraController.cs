@@ -13,8 +13,6 @@ public class CameraController : MonoBehaviour
     {
         playerControls = new InputSystem_Actions();
         playerControls.Enable();
-
-
     }
 
     void OnDisable()
@@ -25,7 +23,7 @@ public class CameraController : MonoBehaviour
     void Update()
     {
         Vector2 lookInput = playerControls.Player.Look.ReadValue<Vector2>();
-        lookInput *= sensitivity * Time.deltaTime;
+        lookInput *= sensitivity * 0.01f;
 
         xRotation -= lookInput.y;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
