@@ -28,9 +28,10 @@ public class TerrainConfigAuthoring : MonoBehaviour
 
 public struct TerrainConfig : IComponentData
 {
-    public float Frequency;
-    public float Amplitude;
-    public int Octaves;
-    public float Persistence;
-    public float Lacunarity;
+    // More information about these parameters on the README!
+    public float Frequency;   // Controls how "wide" or "narrow" the hills are
+    public float Amplitude;   // Maximum height of the terrain
+    public int Octaves;       // Number of noise layers
+    public float Persistence; // Influence of each successive layer
+    public float Lacunarity;  // Frequency multiplier per layer
 }
