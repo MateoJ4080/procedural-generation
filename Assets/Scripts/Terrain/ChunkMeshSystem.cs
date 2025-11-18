@@ -6,7 +6,8 @@ using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
-using Unity.Entities.UniversalDelegates;
+using Unity.Burst;
+using Unity.Jobs;
 
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
@@ -43,34 +44,51 @@ public partial class ChunkMeshSystem : SystemBase
             var height = chunk.ValueRO.Height;
             var depth = chunk.ValueRO.Depth;
 
-            var vertices = new NativeList<float3>(Allocator.Temp);
-            var uvs = new NativeList<float2>(Allocator.Temp);
-            var triangles = new NativeList<int>(Allocator.Temp);
-            var normals = new NativeList<float3>(Allocator.Temp);
+            var vertices = new NativeList<float3>(Allocator.TempJob); // TempJob allocation: safe for 4 frames
+            var uvs = new NativeList<float2>(Allocator.TempJob);
+            var triangles = new NativeList<int>(Allocator.TempJob);
+            var normals = new NativeList<float3>(Allocator.TempJob);
 
-            for (int x = 0; x < width; x++)
+            // for (int x = 0; x < width; x++)
+            // {
+            //     for (int y = 0; y < height; y++)
+            //     {
+            //         for (int z = 0; z < depth; z++)
+            //         {
+            //             int index = x + y * width + z * width * height;
+            //             var block = buffer[index];
+
+            //             if (block.Type == 0) continue;
+
+            //             bool right = IsAir(buffer, width, height, depth, x + 1, y, z);
+            //             bool left = IsAir(buffer, width, height, depth, x - 1, y, z);
+            //             bool top = IsAir(buffer, width, height, depth, x, y + 1, z);
+            //             bool bottom = IsAir(buffer, width, height, depth, x, y - 1, z);
+            //             bool front = IsAir(buffer, width, height, depth, x, y, z + 1);
+            //             bool back = IsAir(buffer, width, height, depth, x, y, z - 1);
+
+            //             AddVisibleFaces(vertices, triangles, normals, uvs, new int3(x, y, z),
+            //                 right, left, top, bottom, front, back);
+            //         }
+            //     }
+            // }
+
+            var addFacesJob = new AddFacesJob
             {
-                for (int y = 0; y < height; y++)
-                {
-                    for (int z = 0; z < depth; z++)
-                    {
-                        int index = x + y * width + z * width * height;
-                        var block = buffer[index];
+                Buffer = buffer.AsNativeArray(),
 
-                        if (block.Type == 0) continue;
+                Width = width,
+                Height = height,
+                Depth = depth,
 
-                        bool right = IsAir(buffer, width, height, depth, x + 1, y, z);
-                        bool left = IsAir(buffer, width, height, depth, x - 1, y, z);
-                        bool top = IsAir(buffer, width, height, depth, x, y + 1, z);
-                        bool bottom = IsAir(buffer, width, height, depth, x, y - 1, z);
-                        bool front = IsAir(buffer, width, height, depth, x, y, z + 1);
-                        bool back = IsAir(buffer, width, height, depth, x, y, z - 1);
+                Vertices = vertices,
+                UVs = uvs,
+                Triangles = triangles,
+                Normals = normals
+            };
 
-                        AddVisibleFaces(vertices, triangles, normals, uvs, new int3(x, y, z),
-                            right, left, top, bottom, front, back);
-                    }
-                }
-            }
+            var handle = addFacesJob.Schedule();
+            handle.Complete();
 
             if (vertices.Length > 0)
             {
@@ -91,19 +109,20 @@ public partial class ChunkMeshSystem : SystemBase
                 meshesToAdd.Add((entity, mesh, renderArray));
 
                 // Debug
-                if (!debugObjectInstantiated)
-                {
-                    Debug.Log("Generating debug GameObject");
-                    var go = new GameObject("DebugMesh", typeof(MeshFilter), typeof(MeshRenderer));
-                    go.GetComponent<MeshFilter>().sharedMesh = mesh;
-                    go.GetComponent<MeshRenderer>().sharedMaterial = _sharedMaterial;
-                    go.transform.position = new Vector3(0, 0, 25f);
+                // if (!debugObjectInstantiated)
+                // {
+                //     Debug.Log("Generating debug GameObject");
+                //     var go = new GameObject("DebugMesh", typeof(MeshFilter), typeof(MeshRenderer));
+                //     go.GetComponent<MeshFilter>().sharedMesh = mesh;
+                //     go.GetComponent<MeshRenderer>().sharedMaterial = _sharedMaterial;
+                //     go.transform.position = new Vector3(0, 0, 25f);
 
-                    debugObjectInstantiated = true;
-                }
+                //     debugObjectInstantiated = true;
+                // }
             }
 
             vertices.Dispose();
+            uvs.Dispose();
             triangles.Dispose();
             normals.Dispose();
         }
@@ -145,138 +164,187 @@ public partial class ChunkMeshSystem : SystemBase
         return buffer[index].Type == 0;
     }
 
-    private void AddVisibleFaces(NativeList<float3> vertices, NativeList<int> triangles,
-        NativeList<float3> normals, NativeList<float2> uvs, int3 pos,
-        bool right, bool left, bool top, bool bottom, bool front, bool back)
+    [BurstCompile]
+    public struct AddFacesJob : IJob
     {
-        // "pos" is the position of the vertex at the bottom back left of the block, not its center
-        // Vertices of the faces might not be set in sync with the UVs. Verify later.
+        [ReadOnly] public NativeArray<Block> Buffer; // DynamicBuffer can't be used in jobs; NativeArray provides native blittable memory (needed by the Job System)
+        public int Width;
+        public int Height;
+        public int Depth;
 
-        int start = vertices.Length;
+        public NativeList<float3> Vertices;
+        public NativeList<float2> UVs;
+        public NativeList<int> Triangles;
+        public NativeList<float3> Normals;
 
-        if (right)
+
+        public void Execute()
         {
-            vertices.Add(pos + new float3(1, 0, 0)); // Bottom left of this face
-            vertices.Add(pos + new float3(1, 1, 0)); // Top left
-            vertices.Add(pos + new float3(1, 1, 1)); // Top right
-            vertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    for (int z = 0; z < Depth; z++)
+                    {
+                        int index = x + y * Width + z * Width * Height;
+                        var block = Buffer[index];
 
-            // *Has to be in same order as vertices to have the right orientation*
-            uvs.Add(new float2(0.875f, 0.5f));
-            uvs.Add(new float2(0.875f, 0.75f));
-            uvs.Add(new float2(1, 0.75f));
-            uvs.Add(new float2(1, 0.5f));
+                        if (block.Type == 0) continue;
 
-            AddQuad(triangles, start);
-            AddNormals(normals, new float3(1, 0, 0));
-            start += 4;
+                        bool right = IsAir(x + 1, y, z);
+                        bool left = IsAir(x - 1, y, z);
+                        bool top = IsAir(x, y + 1, z);
+                        bool bottom = IsAir(x, y - 1, z);
+                        bool front = IsAir(x, y, z + 1);
+                        bool back = IsAir(x, y, z - 1);
+
+                        AddVisibleFaces(new int3(x, y, z), right, left, top, bottom, front, back);
+                    }
+                }
+            }
         }
 
-        if (left)
+        bool IsAir(int x, int y, int z)
         {
-            vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
-            vertices.Add(pos + new float3(0, 1, 1)); // Top left
-            vertices.Add(pos + new float3(0, 1, 0)); // Top right
-            vertices.Add(pos + new float3(0, 0, 0)); // Bottom right
+            if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth)
+                return true;
 
-            // *Has to be in same order as vertices to have the right orientation*
-            uvs.Add(new float2(0.875f, 0.5f));
-            uvs.Add(new float2(0.875f, 0.75f));
-            uvs.Add(new float2(1, 0.75f));
-            uvs.Add(new float2(1, 0.5f));
-
-            AddQuad(triangles, start);
-            AddNormals(normals, new float3(-1, 0, 0));
-            start += 4;
+            int index = x + y * Width + z * Width * Height;
+            return Buffer[index].Type == 0;
         }
 
-        if (top)
+        void AddVisibleFaces(int3 pos, bool right, bool left, bool top, bool bottom, bool front, bool back)
         {
-            vertices.Add(pos + new float3(0, 1, 0)); // Bottom left of this face
-            vertices.Add(pos + new float3(0, 1, 1)); // Top left
-            vertices.Add(pos + new float3(1, 1, 1)); // Top right
-            vertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+            // "pos" is the position of the vertex at the bottom back left of the block, not its center
+            // Vertices of the faces might not be set in sync with the UVs. Verify later.
 
-            // *Has to be in same order as vertices to have the right orientation*
-            uvs.Add(new float2(0.5f, 0.75f));
-            uvs.Add(new float2(0.5f, 1));
-            uvs.Add(new float2(0.625f, 1));
-            uvs.Add(new float2(0.625f, 0.75f));
+            int start = Vertices.Length;
 
-            AddQuad(triangles, start);
-            AddNormals(normals, new float3(0, 1, 0));
-            start += 4;
+            if (right)
+            {
+                Vertices.Add(pos + new float3(1, 0, 0)); // Bottom left of this face
+                Vertices.Add(pos + new float3(1, 1, 0)); // Top left
+                Vertices.Add(pos + new float3(1, 1, 1)); // Top right
+                Vertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+
+                // *Has to be in same order as vertices to have the right orientation*
+                UVs.Add(new float2(0.875f, 0.5f));
+                UVs.Add(new float2(0.875f, 0.75f));
+                UVs.Add(new float2(1, 0.75f));
+                UVs.Add(new float2(1, 0.5f));
+
+                AddQuad(start);
+                AddNormals(new float3(1, 0, 0));
+                start += 4;
+            }
+
+            if (left)
+            {
+                Vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
+                Vertices.Add(pos + new float3(0, 1, 1)); // Top left
+                Vertices.Add(pos + new float3(0, 1, 0)); // Top right
+                Vertices.Add(pos + new float3(0, 0, 0)); // Bottom right
+
+                // *Has to be in same order as vertices to have the right orientation*
+                UVs.Add(new float2(0.875f, 0.5f));
+                UVs.Add(new float2(0.875f, 0.75f));
+                UVs.Add(new float2(1, 0.75f));
+                UVs.Add(new float2(1, 0.5f));
+
+                AddQuad(start);
+                AddNormals(new float3(-1, 0, 0));
+                start += 4;
+            }
+
+            if (top)
+            {
+                Vertices.Add(pos + new float3(0, 1, 0)); // Bottom left of this face
+                Vertices.Add(pos + new float3(0, 1, 1)); // Top left
+                Vertices.Add(pos + new float3(1, 1, 1)); // Top right
+                Vertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+
+                // *Has to be in same order as vertices to have the right orientation*
+                UVs.Add(new float2(0.5f, 0.75f));
+                UVs.Add(new float2(0.5f, 1));
+                UVs.Add(new float2(0.625f, 1));
+                UVs.Add(new float2(0.625f, 0.75f));
+
+                AddQuad(start);
+                AddNormals(new float3(0, 1, 0));
+                start += 4;
+            }
+
+            if (bottom)
+            {
+                Vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
+                Vertices.Add(pos + new float3(0, 0, 0)); // Top left
+                Vertices.Add(pos + new float3(1, 0, 0)); // Top right
+                Vertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+
+                // *Has to be in same order as vertices to have the right orientation*
+                UVs.Add(new float2(0.875f, 0.5f));
+                UVs.Add(new float2(0.875f, 0.75f));
+                UVs.Add(new float2(1, 0.75f));
+                UVs.Add(new float2(1, 0.5f));
+
+                AddQuad(start);
+                AddNormals(new float3(0, -1, 0));
+                start += 4;
+            }
+
+            if (front)
+            {
+                Vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
+                Vertices.Add(pos + new float3(1, 0, 1)); // Top left
+                Vertices.Add(pos + new float3(1, 1, 1)); // Top right
+                Vertices.Add(pos + new float3(0, 1, 1)); // Bottom right
+
+                // *Has to be in same order as vertices to have the right orientation*
+                UVs.Add(new float2(0.875f, 0.5f));
+                UVs.Add(new float2(0.875f, 0.75f));
+                UVs.Add(new float2(1, 0.75f));
+                UVs.Add(new float2(1, 0.5f));
+
+                AddQuad(start);
+                AddNormals(new float3(0, 0, 1));
+                start += 4;
+            }
+
+            if (back)
+            {
+                Vertices.Add(pos + new float3(1, 0, 0)); // Bottom left of this face
+                Vertices.Add(pos + new float3(0, 0, 0)); // Top left
+                Vertices.Add(pos + new float3(0, 1, 0)); // Top right
+                Vertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+
+                // *Has to be in same order as vertices to have the right orientation*
+                UVs.Add(new float2(0.875f, 0.5f));
+                UVs.Add(new float2(0.875f, 0.75f));
+                UVs.Add(new float2(1, 0.75f));
+                UVs.Add(new float2(1, 0.5f));
+
+                AddQuad(start);
+                AddNormals(new float3(0, 0, -1));
+            }
         }
 
-        if (bottom)
+
+        private void AddQuad(int start)
         {
-            vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
-            vertices.Add(pos + new float3(0, 0, 0)); // Top left
-            vertices.Add(pos + new float3(1, 0, 0)); // Top right
-            vertices.Add(pos + new float3(1, 0, 1)); // Bottom right
-
-            // *Has to be in same order as vertices to have the right orientation*
-            uvs.Add(new float2(0.875f, 0.5f));
-            uvs.Add(new float2(0.875f, 0.75f));
-            uvs.Add(new float2(1, 0.75f));
-            uvs.Add(new float2(1, 0.5f));
-
-            AddQuad(triangles, start);
-            AddNormals(normals, new float3(0, -1, 0));
-            start += 4;
+            Triangles.Add(start + 0);
+            Triangles.Add(start + 1);
+            Triangles.Add(start + 2);
+            Triangles.Add(start + 0);
+            Triangles.Add(start + 2);
+            Triangles.Add(start + 3);
         }
 
-        if (front)
+        private void AddNormals(float3 normal)
         {
-            vertices.Add(pos + new float3(0, 0, 1)); // Bottom left of this face
-            vertices.Add(pos + new float3(1, 0, 1)); // Top left
-            vertices.Add(pos + new float3(1, 1, 1)); // Top right
-            vertices.Add(pos + new float3(0, 1, 1)); // Bottom right
-
-            // *Has to be in same order as vertices to have the right orientation*
-            uvs.Add(new float2(0.875f, 0.5f));
-            uvs.Add(new float2(0.875f, 0.75f));
-            uvs.Add(new float2(1, 0.75f));
-            uvs.Add(new float2(1, 0.5f));
-
-            AddQuad(triangles, start);
-            AddNormals(normals, new float3(0, 0, 1));
-            start += 4;
+            Normals.Add(normal);
+            Normals.Add(normal);
+            Normals.Add(normal);
+            Normals.Add(normal);
         }
-
-        if (back)
-        {
-            vertices.Add(pos + new float3(1, 0, 0)); // Bottom left of this face
-            vertices.Add(pos + new float3(0, 0, 0)); // Top left
-            vertices.Add(pos + new float3(0, 1, 0)); // Top right
-            vertices.Add(pos + new float3(1, 1, 0)); // Bottom right
-
-            // *Has to be in same order as vertices to have the right orientation*
-            uvs.Add(new float2(0.875f, 0.5f));
-            uvs.Add(new float2(0.875f, 0.75f));
-            uvs.Add(new float2(1, 0.75f));
-            uvs.Add(new float2(1, 0.5f));
-
-            AddQuad(triangles, start);
-            AddNormals(normals, new float3(0, 0, -1));
-        }
-    }
-
-    private void AddQuad(NativeList<int> triangles, int start)
-    {
-        triangles.Add(start + 0);
-        triangles.Add(start + 1);
-        triangles.Add(start + 2);
-        triangles.Add(start + 0);
-        triangles.Add(start + 2);
-        triangles.Add(start + 3);
-    }
-
-    private void AddNormals(NativeList<float3> normals, float3 normal)
-    {
-        normals.Add(normal);
-        normals.Add(normal);
-        normals.Add(normal);
-        normals.Add(normal);
     }
 }
