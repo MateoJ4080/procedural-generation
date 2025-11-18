@@ -14,7 +14,6 @@ using Unity.Jobs;
 public partial class ChunkMeshSystem : SystemBase
 {
     [SerializeField] private Material _sharedMaterial;
-    private bool debugObjectInstantiated = false;
 
     protected override void OnCreate()
     {
@@ -48,30 +47,6 @@ public partial class ChunkMeshSystem : SystemBase
             var uvs = new NativeList<float2>(Allocator.TempJob);
             var triangles = new NativeList<int>(Allocator.TempJob);
             var normals = new NativeList<float3>(Allocator.TempJob);
-
-            // for (int x = 0; x < width; x++)
-            // {
-            //     for (int y = 0; y < height; y++)
-            //     {
-            //         for (int z = 0; z < depth; z++)
-            //         {
-            //             int index = x + y * width + z * width * height;
-            //             var block = buffer[index];
-
-            //             if (block.Type == 0) continue;
-
-            //             bool right = IsAir(buffer, width, height, depth, x + 1, y, z);
-            //             bool left = IsAir(buffer, width, height, depth, x - 1, y, z);
-            //             bool top = IsAir(buffer, width, height, depth, x, y + 1, z);
-            //             bool bottom = IsAir(buffer, width, height, depth, x, y - 1, z);
-            //             bool front = IsAir(buffer, width, height, depth, x, y, z + 1);
-            //             bool back = IsAir(buffer, width, height, depth, x, y, z - 1);
-
-            //             AddVisibleFaces(vertices, triangles, normals, uvs, new int3(x, y, z),
-            //                 right, left, top, bottom, front, back);
-            //         }
-            //     }
-            // }
 
             var addFacesJob = new AddFacesJob
             {
@@ -107,18 +82,6 @@ public partial class ChunkMeshSystem : SystemBase
                 var renderArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
 
                 meshesToAdd.Add((entity, mesh, renderArray));
-
-                // Debug
-                // if (!debugObjectInstantiated)
-                // {
-                //     Debug.Log("Generating debug GameObject");
-                //     var go = new GameObject("DebugMesh", typeof(MeshFilter), typeof(MeshRenderer));
-                //     go.GetComponent<MeshFilter>().sharedMesh = mesh;
-                //     go.GetComponent<MeshRenderer>().sharedMaterial = _sharedMaterial;
-                //     go.transform.position = new Vector3(0, 0, 25f);
-
-                //     debugObjectInstantiated = true;
-                // }
             }
 
             vertices.Dispose();
@@ -152,16 +115,6 @@ public partial class ChunkMeshSystem : SystemBase
         {
             Object.Destroy(_sharedMaterial);
         }
-    }
-
-    private bool IsAir(DynamicBuffer<Block> buffer, int width, int height, int depth, int x, int y, int z)
-    {
-        // Out of bounds is considered air
-        if (x < 0 || y < 0 || z < 0 || x >= width || y >= height || z >= depth)
-            return true;
-
-        int index = x + y * width + z * width * height;
-        return buffer[index].Type == 0;
     }
 
     [BurstCompile]
