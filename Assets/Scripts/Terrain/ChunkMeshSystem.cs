@@ -15,8 +15,39 @@ public partial class ChunkMeshSystem : SystemBase
 {
     [SerializeField] private Material _sharedMaterial;
 
+    public NativeList<float3> SharedVertices;
+    public NativeList<float2> SharedUVs;
+    public NativeList<int> SharedTriangles;
+    public NativeList<float3> SharedNormals;
+
+    private struct PendingMesh
+    {
+        public Entity Entity;
+        public int Width;
+        public int Height;
+        public int Depth;
+    }
+
+    /// <summary>
+    /// Indicates if there's a job running from the previous frame
+    /// </summary>
+    private bool _hasPendingJob;
+    /// <summary>
+    /// Reference to the running job to call Complete() on it
+    /// </summary>
+    private JobHandle _pendingJobHandle;
+    /// <summary>
+    /// Stores entity data to use when the job finishes. This is to avoid the mesh and the 
+    /// </summary>
+    private PendingMesh _pendingMeshData;
+
     protected override void OnCreate()
     {
+        SharedVertices = new NativeList<float3>(Allocator.Persistent);
+        SharedUVs = new NativeList<float2>(Allocator.Persistent);
+        SharedTriangles = new NativeList<int>(Allocator.Persistent);
+        SharedNormals = new NativeList<float3>(Allocator.Persistent);
+
         _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         var atlas = Resources.Load<Texture2D>("WSUUw");
         _sharedMaterial.mainTexture = atlas;
@@ -26,27 +57,73 @@ public partial class ChunkMeshSystem : SystemBase
 
         if (_sharedMaterial == null) Debug.LogError("Shader not found");
         else Debug.Log("Material created: " + _sharedMaterial.name);
+
+        _hasPendingJob = false;
     }
 
+    protected override void OnDestroy()
+    {
+        if (_hasPendingJob)
+        {
+            _pendingJobHandle.Complete();
+        }
 
+        if (_sharedMaterial != null)
+        {
+            Object.Destroy(_sharedMaterial);
+        }
+
+        if (SharedVertices.IsCreated) SharedVertices.Dispose();
+        if (SharedUVs.IsCreated) SharedUVs.Dispose();
+        if (SharedTriangles.IsCreated) SharedTriangles.Dispose();
+        if (SharedNormals.IsCreated) SharedNormals.Dispose();
+    }
     protected override void OnUpdate()
     {
-        var ecb = new EntityCommandBuffer(Allocator.Temp);
-        var meshesToAdd = new List<(Entity entity, Mesh mesh, RenderMeshArray renderArray)>();
+        if (_hasPendingJob)
+        {
+            _pendingJobHandle.Complete();
 
+            if (SharedVertices.Length > 0)
+            {
+                // Generate mesh
+                var mesh = new Mesh();
+                mesh.name = $"ChunkMesh_{_pendingMeshData.Entity.Index}";
+                mesh.SetVertices(SharedVertices.AsArray());
+                mesh.SetTriangles(SharedTriangles.AsArray().ToArray(), 0);
+                mesh.SetNormals(SharedNormals.AsArray());
+                mesh.SetUVs(0, SharedUVs.AsArray());
+                mesh.RecalculateBounds();
 
+                var desc = new RenderMeshDescription(
+                    shadowCastingMode: ShadowCastingMode.Off,
+                    receiveShadows: false);
+
+                var renderMeshArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
+                RenderMeshUtility.AddComponents(_pendingMeshData.Entity, EntityManager, desc, renderMeshArray, MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
+
+                // EntityCommandBuffer
+                var ecb = new EntityCommandBuffer(Allocator.Temp);
+                ecb.SetName(_pendingMeshData.Entity, "ChunkMesh_" + _pendingMeshData.Entity.Index);
+                ecb.Playback(EntityManager);
+                ecb.Dispose();
+            }
+            _hasPendingJob = false;
+        }
+
+        // For each entity with the component "Chunk" and buffer of blocks, calculate faces with a job and generate mesh
         foreach (var (chunk, buffer, entity) in SystemAPI.Query<RefRO<Chunk>, DynamicBuffer<Block>>()
             .WithEntityAccess()
             .WithNone<MaterialMeshInfo>())
         {
+            SharedNormals.Clear();
+            SharedUVs.Clear();
+            SharedTriangles.Clear();
+            SharedVertices.Clear();
+
             var width = chunk.ValueRO.Width;
             var height = chunk.ValueRO.Height;
             var depth = chunk.ValueRO.Depth;
-
-            var vertices = new NativeList<float3>(Allocator.TempJob); // TempJob allocation: safe for 4 frames
-            var uvs = new NativeList<float2>(Allocator.TempJob);
-            var triangles = new NativeList<int>(Allocator.TempJob);
-            var normals = new NativeList<float3>(Allocator.TempJob);
 
             var addFacesJob = new AddFacesJob
             {
@@ -56,64 +133,26 @@ public partial class ChunkMeshSystem : SystemBase
                 Height = height,
                 Depth = depth,
 
-                Vertices = vertices,
-                UVs = uvs,
-                Triangles = triangles,
-                Normals = normals
+                Vertices = SharedVertices,
+                UVs = SharedUVs,
+                Triangles = SharedTriangles,
+                Normals = SharedNormals
             };
 
-            var handle = addFacesJob.Schedule();
-            handle.Complete();
+            _pendingJobHandle = addFacesJob.Schedule();
+            // Makes sure to wait for the faces before creating the mesh right in the next line
+            Dependency = _pendingJobHandle;
 
-            if (vertices.Length > 0)
+            _pendingMeshData = new PendingMesh
             {
-                ecb.SetName(entity, "ChunkMesh_" + entity.Index);
+                Entity = entity,
+                Width = width,
+                Height = height,
+                Depth = depth
+            };
+            _hasPendingJob = true;
 
-                // Generate mesh
-                var mesh = new Mesh();
-                mesh.name = $"ChunkMesh_{entity.Index}";
-                mesh.SetVertices(vertices.AsArray());
-                mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
-                mesh.SetNormals(normals.AsArray());
-                mesh.SetUVs(0, uvs.AsArray());
-                mesh.RecalculateBounds();
-
-                // Show mesh
-                var renderArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
-
-                meshesToAdd.Add((entity, mesh, renderArray));
-            }
-
-            vertices.Dispose();
-            uvs.Dispose();
-            triangles.Dispose();
-            normals.Dispose();
-        }
-
-        ecb.Playback(EntityManager);
-        ecb.Dispose();
-
-        var desc = new RenderMeshDescription(
-        shadowCastingMode: ShadowCastingMode.Off,
-        receiveShadows: false);
-
-        foreach (var item in meshesToAdd)
-        {
-            var renderMeshArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { item.mesh });
-            RenderMeshUtility.AddComponents(item.entity, EntityManager, desc, renderMeshArray, MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
-
-
-            var transform = EntityManager.GetComponentData<LocalTransform>(item.entity);
-            EntityManager.SetComponentData(item.entity, transform);
-        }
-        meshesToAdd.Clear();
-    }
-
-    protected override void OnDestroy()
-    {
-        if (_sharedMaterial != null)
-        {
-            Object.Destroy(_sharedMaterial);
+            break;
         }
     }
 
