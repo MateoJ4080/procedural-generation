@@ -1,11 +1,9 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
-using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Jobs;
 
@@ -20,6 +18,7 @@ public partial class ChunkMeshSystem : SystemBase
     public NativeList<int> SharedTriangles;
     public NativeList<float3> SharedNormals;
 
+    bool debugObjectInstantiated = false;
     private struct PendingMesh
     {
         public Entity Entity;
@@ -53,10 +52,7 @@ public partial class ChunkMeshSystem : SystemBase
         _sharedMaterial.mainTexture = atlas;
 
         if (atlas == null) Debug.Log("Atlas not found");
-        else Debug.Log("Atlas found");
-
         if (_sharedMaterial == null) Debug.LogError("Shader not found");
-        else Debug.Log("Material created: " + _sharedMaterial.name);
 
         _hasPendingJob = false;
     }
@@ -82,7 +78,9 @@ public partial class ChunkMeshSystem : SystemBase
     {
         if (_hasPendingJob)
         {
+            // Complete job to have faces
             _pendingJobHandle.Complete();
+            Debug.Log($"Job complete: Vertices: {SharedVertices.Length}, Triangles: {SharedTriangles.Length}, Normals: {SharedNormals.Length}, UVs: {SharedUVs.Length}");
 
             if (SharedVertices.Length > 0)
             {
@@ -93,7 +91,6 @@ public partial class ChunkMeshSystem : SystemBase
                 mesh.SetTriangles(SharedTriangles.AsArray().ToArray(), 0);
                 mesh.SetNormals(SharedNormals.AsArray());
                 mesh.SetUVs(0, SharedUVs.AsArray());
-                mesh.RecalculateBounds();
 
                 var desc = new RenderMeshDescription(
                     shadowCastingMode: ShadowCastingMode.Off,
@@ -102,11 +99,30 @@ public partial class ChunkMeshSystem : SystemBase
                 var renderMeshArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
                 RenderMeshUtility.AddComponents(_pendingMeshData.Entity, EntityManager, desc, renderMeshArray, MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
 
+                // If LocalTransform already exists, refresh
+                if (EntityManager.HasComponent<Unity.Transforms.LocalTransform>(_pendingMeshData.Entity))
+                {
+                    var transform = EntityManager.GetComponentData<Unity.Transforms.LocalTransform>(_pendingMeshData.Entity);
+                    EntityManager.SetComponentData(_pendingMeshData.Entity, transform);
+                }
+
                 // EntityCommandBuffer
                 var ecb = new EntityCommandBuffer(Allocator.Temp);
-                ecb.SetName(_pendingMeshData.Entity, "ChunkMesh_" + _pendingMeshData.Entity.Index);
+                ecb.SetName(_pendingMeshData.Entity, "ChunkMeshS_" + _pendingMeshData.Entity.Index);
                 ecb.Playback(EntityManager);
                 ecb.Dispose();
+
+                if (!debugObjectInstantiated)
+                {
+                    Debug.Log("Generating debug GameObject");
+                    var go = new GameObject("DebugMesh", typeof(MeshFilter), typeof(MeshRenderer));
+                    go.GetComponent<MeshFilter>().sharedMesh = mesh;
+                    go.GetComponent<MeshRenderer>().sharedMaterial = _sharedMaterial;
+                    go.transform.position = new Vector3(0, 0, 25f);
+                    debugObjectInstantiated = true;
+                }
+
+                mesh.RecalculateBounds();
             }
             _hasPendingJob = false;
         }
@@ -139,7 +155,9 @@ public partial class ChunkMeshSystem : SystemBase
                 Normals = SharedNormals
             };
 
+            // Schedules job to complete on the next frame
             _pendingJobHandle = addFacesJob.Schedule();
+
             // Makes sure to wait for the faces before creating the mesh right in the next line
             Dependency = _pendingJobHandle;
 
