@@ -99,7 +99,7 @@ public partial class ChunkMeshSystem : SystemBase
                 var renderMeshArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
                 RenderMeshUtility.AddComponents(_pendingMeshData.Entity, EntityManager, desc, renderMeshArray, MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
 
-                // If LocalTransform already exists, refresh
+                // If LocalTransform already exists, refresh it to ensure correct render
                 if (EntityManager.HasComponent<Unity.Transforms.LocalTransform>(_pendingMeshData.Entity))
                 {
                     var transform = EntityManager.GetComponentData<Unity.Transforms.LocalTransform>(_pendingMeshData.Entity);
@@ -108,7 +108,7 @@ public partial class ChunkMeshSystem : SystemBase
 
                 // EntityCommandBuffer
                 var ecb = new EntityCommandBuffer(Allocator.Temp);
-                ecb.SetName(_pendingMeshData.Entity, "ChunkMeshS_" + _pendingMeshData.Entity.Index);
+                ecb.SetName(_pendingMeshData.Entity, "ChunkMesh_" + _pendingMeshData.Entity.Index);
                 ecb.Playback(EntityManager);
                 ecb.Dispose();
 
