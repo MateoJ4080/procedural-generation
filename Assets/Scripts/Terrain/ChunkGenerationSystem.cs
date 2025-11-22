@@ -1,3 +1,4 @@
+using System.Linq;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -51,6 +52,7 @@ public partial struct ChunkGenerationSystem : ISystem
 
         int loadRadius = 2;
 
+        // Load new chunks based on player's position
         for (int dx = -loadRadius; dx <= loadRadius; dx++)
         {
             for (int dz = -loadRadius; dz <= loadRadius; dz++)
@@ -96,13 +98,14 @@ public partial struct ChunkGenerationSystem : ISystem
         if (chunks.IsCreated) chunks.Dispose();
     }
 
+    // Clear chunks list if TerrainConfig is updated, allowing new generation in the OnUpdate
     private void RegenerateAllChunks(ref SystemState state, TerrainConfig config)
     {
-        UnityEngine.Debug.Log("Regenerating chunks");
         foreach (var entity in chunks.GetValueArray(Allocator.Temp))
         {
             state.EntityManager.DestroyEntity(entity);
         }
+
         chunks.Clear();
     }
 }

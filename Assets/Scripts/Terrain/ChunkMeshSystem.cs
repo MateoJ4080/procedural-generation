@@ -13,6 +13,7 @@ public partial class ChunkMeshSystem : SystemBase
 {
     [SerializeField] private Material _sharedMaterial;
 
+    // "Shared" as with other scripts
     public NativeList<float3> SharedVertices;
     public NativeList<float2> SharedUVs;
     public NativeList<int> SharedTriangles;
@@ -74,15 +75,17 @@ public partial class ChunkMeshSystem : SystemBase
         if (SharedTriangles.IsCreated) SharedTriangles.Dispose();
         if (SharedNormals.IsCreated) SharedNormals.Dispose();
     }
+
     protected override void OnUpdate()
     {
         if (_hasPendingJob)
         {
             // Complete job to have faces
             _pendingJobHandle.Complete();
-            Debug.Log($"Job complete: Vertices: {SharedVertices.Length}, Triangles: {SharedTriangles.Length}, Normals: {SharedNormals.Length}, UVs: {SharedUVs.Length}");
 
-            if (SharedVertices.Length > 0)
+            // Check if it exists, otherwise SharedVertices may not be null and try to work with a null _pendingMeshData.
+            // Remember entities can be destroyed within RegenerateAllChunks in ChunkGenerationSystem
+            if (SharedVertices.Length > 0 && EntityManager.Exists(_pendingMeshData.Entity))
             {
                 // Generate mesh
                 var mesh = new Mesh();
@@ -127,7 +130,7 @@ public partial class ChunkMeshSystem : SystemBase
             _hasPendingJob = false;
         }
 
-        // For each entity with the component "Chunk" and buffer of blocks, calculate faces with a job and generate mesh
+        // For each entity with the component "Chunk", take its block buffer and schedule job to calculate faces
         foreach (var (chunk, buffer, entity) in SystemAPI.Query<RefRO<Chunk>, DynamicBuffer<Block>>()
             .WithEntityAccess()
             .WithNone<MaterialMeshInfo>())
