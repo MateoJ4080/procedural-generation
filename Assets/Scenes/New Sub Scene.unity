@@ -148,11 +148,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f522f917fa844944fb5054939ab71476, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainConfigAuthoring
-  frequency: -0.09
-  amplitude: 0.2
-  octaves: 4
+  frequency: 0.05
+  amplitude: 0.11
+  octaves: 2
   persistence: 0.38
-  lacunarity: -0.66
+  lacunarity: 0.02
 --- !u!4 &11266649
 Transform:
   m_ObjectHideFlags: 0
@@ -179,7 +179,7 @@ GameObject:
   - component: {fileID: 97590828}
   - component: {fileID: 97590827}
   m_Layer: 0
-  m_Name: GameManagerEntity
+  m_Name: GameManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

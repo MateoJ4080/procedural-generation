@@ -47,7 +47,7 @@ public partial struct ChunkGenerationSystem : ISystem
         }
 
         float3 playerPos = SystemAPI.GetComponent<PlayerTracker>(managerEntity).playerPosition;
-        int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
+        int2 playerChunk = new((int)(playerPos.x / 16), (int)(playerPos.z / 16));
 
         int loadRadius = 2;
 
