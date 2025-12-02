@@ -4,7 +4,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     private CharacterController cc;
-    private InputSystem_Actions playerControls;
+    private InputSystem_Actions controls;
 
     [SerializeField] float gravity = -9.81f;
     [SerializeField] float speed = 1;
@@ -15,21 +15,21 @@ public class PlayerController : MonoBehaviour
     {
         cc = GetComponent<CharacterController>();
 
-        playerControls = new InputSystem_Actions();
+        controls = new InputSystem_Actions();
     }
 
     void OnEnable()
     {
-        playerControls.Enable();
-        playerControls.Player.Move.performed += OnMove;
-        playerControls.Player.Move.canceled += OnMove;
+        controls.Enable();
+        controls.Player.Move.performed += OnMove;
+        controls.Player.Move.canceled += OnMove;
     }
 
     void OnDisable()
     {
-        playerControls.Player.Move.performed -= OnMove;
-        playerControls.Player.Move.canceled -= OnMove;
-        playerControls.Disable();
+        controls.Player.Move.performed -= OnMove;
+        controls.Player.Move.canceled -= OnMove;
+        controls.Disable();
     }
 
     void OnMove(UnityEngine.InputSystem.InputAction.CallbackContext context)

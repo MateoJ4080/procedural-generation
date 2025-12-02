@@ -7,22 +7,22 @@ public class CameraController : MonoBehaviour
 
     float xRotation = 0;
 
-    private InputSystem_Actions playerControls;
+    private InputSystem_Actions controls;
 
     void Awake()
     {
-        playerControls = new InputSystem_Actions();
-        playerControls.Enable();
+        controls = new InputSystem_Actions();
+        controls.Enable();
     }
 
     void OnDisable()
     {
-        playerControls.Disable();
+        controls.Disable();
     }
 
     void Update()
     {
-        Vector2 lookInput = playerControls.Player.Look.ReadValue<Vector2>();
+        Vector2 lookInput = controls.Player.Look.ReadValue<Vector2>();
         lookInput *= sensitivity * 0.01f;
 
         xRotation -= lookInput.y;
