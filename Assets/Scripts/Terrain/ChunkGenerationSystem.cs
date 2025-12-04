@@ -22,23 +22,15 @@ public partial struct ChunkGenerationSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
-        if (!SystemAPI.TryGetSingleton<TerrainConfig>(out var config))
-            return;
-
-        if (!config.Equals(lastConfig))
+        // Alter the terrain in runtime if TerrainConfig values are changed
+        if (SystemAPI.TryGetSingleton<TerrainConfig>(out var config))
         {
-            RegenerateAllChunks(ref state, config);
-            lastConfig = config;
-        }
-
-        if (!managerFound)
-        {
-            foreach (var (_, entity) in SystemAPI.Query<RefRO<PlayerTracker>>().WithEntityAccess())
+            if (!config.Equals(lastConfig))
             {
-                managerEntity = entity;
-                managerFound = true;
-                break;
+                RegenerateAllChunks(ref state, config);
+                lastConfig = config;
             }
+        }
 
             if (!managerFound)
             {
