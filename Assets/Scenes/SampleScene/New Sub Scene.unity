@@ -300,10 +300,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f522f917fa844944fb5054939ab71476, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainConfigAuthoring
-  frequency: 0.03
-  amplitude: 0.2
-  octaves: 3
-  persistence: 0.5
+  frequency: 0.02
+  amplitude: 0.27
+  octaves: 2
+  persistence: 0.1
   lacunarity: 2
 --- !u!4 &284383616
 Transform:
@@ -404,7 +404,7 @@ Transform:
   m_GameObject: {fileID: 826862216}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00044615802, y: 0.00058959133, z: 0.0011141667, w: 0.9999991}
-  m_LocalPosition: {x: 45, y: 12, z: 117.1}
+  m_LocalPosition: {x: 5.05, y: 12, z: 14.76}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
