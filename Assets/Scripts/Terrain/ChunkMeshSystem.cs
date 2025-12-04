@@ -41,6 +41,9 @@ public partial class ChunkMeshSystem : SystemBase
     /// </summary>
     private PendingMesh _pendingMeshData;
 
+    // Entity to share data using its components
+    Entity dataEntity;
+
     protected override void OnCreate()
     {
         SharedVertices = new NativeList<float3>(Allocator.Persistent);
@@ -56,6 +59,13 @@ public partial class ChunkMeshSystem : SystemBase
         if (_sharedMaterial == null) Debug.LogError("Shader not found");
 
         _hasPendingJob = false;
+
+        dataEntity = EntityManager.CreateEntity();
+        EntityManager.AddComponentData(dataEntity, new ChunkMeshData
+        {
+            Vertices = SharedVertices,
+            Triangles = SharedTriangles
+        });
     }
 
     protected override void OnDestroy()
@@ -172,6 +182,11 @@ public partial class ChunkMeshSystem : SystemBase
                 Depth = depth
             };
             _hasPendingJob = true;
+
+            // Let ChunkMeshData know of the jobHandle so other scripts can wait for the job before using data
+            var data = SystemAPI.GetComponent<ChunkMeshData>(dataEntity);
+            data.currentHandle = _pendingJobHandle;
+            SystemAPI.SetComponent(dataEntity, data);
 
             break;
         }
