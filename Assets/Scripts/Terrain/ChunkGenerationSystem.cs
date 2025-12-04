@@ -1,4 +1,3 @@
-using System.Linq;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -8,11 +7,7 @@ using Unity.Transforms;
 
 public partial struct ChunkGenerationSystem : ISystem
 {
-    private Entity managerEntity;
-    private bool managerFound;
-
     private TerrainConfig lastConfig;
-
     private NativeHashMap<int2, Entity> chunks;
 
     public void OnCreate(ref SystemState state)
@@ -32,16 +27,16 @@ public partial struct ChunkGenerationSystem : ISystem
             }
         }
 
-            if (!managerFound)
-            {
-                UnityEngine.Debug.Log("Player doesn't exist yet and chunk creation depends on its existence");
-                return;
-            }
+        if (!SystemAPI.HasSingleton<PlayerTag>())
+        {
+            UnityEngine.Debug.Log("PlayerTag doesn't exist yet and chunk creation depends on its existence");
+            return;
         }
 
-        float3 playerPos = SystemAPI.GetComponent<PlayerTracker>(managerEntity).playerPosition;
-        int2 playerChunk = new((int)(playerPos.x / 16), (int)(playerPos.z / 16));
+        Entity player = SystemAPI.GetSingletonEntity<PlayerTag>();
+        float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
 
+        int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
         int loadRadius = 2;
 
         // Load new chunks based on player's position
@@ -141,5 +136,3 @@ public struct ChunkHeightJob : IJob
         }
     }
 }
-
-
