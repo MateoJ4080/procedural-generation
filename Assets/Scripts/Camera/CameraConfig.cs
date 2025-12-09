@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-public class CameraConfig : IComponentData
+public struct CameraConfig : IComponentData
 {
     public float Sensitivity;
     public float PitchMin;
