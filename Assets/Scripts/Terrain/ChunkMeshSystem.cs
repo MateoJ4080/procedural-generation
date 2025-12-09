@@ -125,15 +125,15 @@ public partial class ChunkMeshSystem : SystemBase
                 ecb.Playback(EntityManager);
                 ecb.Dispose();
 
-                if (!debugObjectInstantiated)
-                {
-                    Debug.Log("Generating debug GameObject");
-                    var go = new GameObject("DebugMesh", typeof(MeshFilter), typeof(MeshRenderer));
-                    go.GetComponent<MeshFilter>().sharedMesh = mesh;
-                    go.GetComponent<MeshRenderer>().sharedMaterial = _sharedMaterial;
-                    go.transform.position = new Vector3(0, 0, 25f);
-                    debugObjectInstantiated = true;
-                }
+                // if (!debugObjectInstantiated)
+                // {
+                //     Debug.Log("Generating debug GameObject");
+                //     var go = new GameObject("DebugMesh", typeof(MeshFilter), typeof(MeshRenderer));
+                //     go.GetComponent<MeshFilter>().sharedMesh = mesh;
+                //     go.GetComponent<MeshRenderer>().sharedMaterial = _sharedMaterial;
+                //     go.transform.position = new Vector3(0, 0, 25f);
+                //     debugObjectInstantiated = true;
+                // }
 
                 mesh.RecalculateBounds();
             }
