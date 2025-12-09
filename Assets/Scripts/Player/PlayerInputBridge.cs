@@ -8,6 +8,7 @@ public class PlayerInputBridge : MonoBehaviour
 
     private EntityManager em;
     private Entity playerEntity;
+    private Entity camEntity;
 
     void Awake()
     {
@@ -25,11 +26,15 @@ public class PlayerInputBridge : MonoBehaviour
     void Start()
     {
         playerEntity = em.CreateEntityQuery(typeof(PlayerTag)).GetSingletonEntity();
+        camEntity = em.CreateEntityQuery(typeof(CameraTag)).GetSingletonEntity();
     }
 
     void Update()
     {
         float2 moveInput = (float2)controls.Player.Move.ReadValue<Vector2>();
+        float2 lookInput = (float2)controls.Player.Look.ReadValue<Vector2>();
+
         em.SetComponentData(playerEntity, new PlayerMoveInput { Value = moveInput });
+        em.SetComponentData(camEntity, new CameraLookInput { Value = lookInput });
     }
 }
