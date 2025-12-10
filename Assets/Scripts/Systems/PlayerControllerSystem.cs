@@ -12,10 +12,7 @@ public partial struct PlayerControllerSystem : ISystem
         em = state.EntityManager;
 
         Entity playerEntity = SystemAPI.GetSingletonEntity<PlayerTag>();
-        Entity camEntity = SystemAPI.GetSingletonEntity<CameraTag>();
-
         LocalTransform playerTransform = SystemAPI.GetComponent<LocalTransform>(playerEntity);
-        LocalTransform camTransform = SystemAPI.GetComponent<LocalTransform>(camEntity);
 
         // Movement
         PlayerMoveInput moveInput = SystemAPI.GetComponent<PlayerMoveInput>(playerEntity);
@@ -30,14 +27,12 @@ public partial struct PlayerControllerSystem : ISystem
 
         // Rotation
         float sensitivity = 1f;
-        var lookInput = SystemAPI.GetComponent<CameraLookInput>(camEntity).Value;
+        var lookInput = SystemAPI.GetComponent<CameraLookInput>(playerEntity).Value;
         float yaw = lookInput.x * SystemAPI.Time.DeltaTime * sensitivity;
 
         playerTransform.Rotation = math.mul(playerTransform.Rotation, quaternion.Euler(0, yaw, 0));
 
         state.EntityManager.SetComponentData(playerEntity, playerTransform);
-        state.EntityManager.SetComponentData(camEntity, camTransform);
-
         em.SetComponentData(playerEntity, playerTransform);
     }
 }

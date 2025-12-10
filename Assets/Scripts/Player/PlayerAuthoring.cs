@@ -15,6 +15,7 @@ public class PlayerAuthoring : MonoBehaviour
             AddComponent<PlayerTag>(entity);
             AddComponent<LocalTransform>(entity);
             AddComponent<PlayerMoveInput>(entity);
+            AddComponent<CameraLookInput>(entity);
             AddComponent(entity, new PlayerSpeed { Value = authoring.speed });
         }
     }
