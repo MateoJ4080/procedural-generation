@@ -12,11 +12,12 @@ public class PlayerAuthoring : MonoBehaviour
         {
             var entity = GetEntity(TransformUsageFlags.Dynamic);
 
-            AddComponent<PlayerTag>(entity);
             AddComponent<LocalTransform>(entity);
+            AddComponent<PlayerTag>(entity);
             AddComponent<PlayerMoveInput>(entity);
             AddComponent<CameraLookInput>(entity);
             AddComponent<CameraSettings>(entity);
+            AddComponent(entity, new GravityData { Gravity = -9.81f });
             AddComponent(entity, new PlayerSpeed { Value = authoring.speed });
         }
     }
