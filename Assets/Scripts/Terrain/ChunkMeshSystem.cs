@@ -19,7 +19,7 @@ public partial class ChunkMeshSystem : SystemBase
     public NativeList<int> SharedTriangles;
     public NativeList<float3> SharedNormals;
 
-    bool debugObjectInstantiated = false;
+    // bool debugObjectInstantiated = false;
     private struct PendingMesh
     {
         public Entity Entity;

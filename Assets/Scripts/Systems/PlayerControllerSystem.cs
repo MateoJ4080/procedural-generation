@@ -6,6 +6,7 @@ using Unity.Transforms;
 public partial struct PlayerControllerSystem : ISystem
 {
     public EntityManager em;
+    private float yaw;
 
     public void OnUpdate(ref SystemState state)
     {
@@ -26,11 +27,13 @@ public partial struct PlayerControllerSystem : ISystem
         playerTransform.Position += move;
 
         // Rotation
-        float sensitivity = 1f;
+        float sensitivity = SystemAPI.GetComponent<CameraSettings>(playerEntity).Sensitivity;
         var lookInput = SystemAPI.GetComponent<CameraLookInput>(playerEntity).Value;
-        float yaw = lookInput.x * SystemAPI.Time.DeltaTime * sensitivity;
 
-        playerTransform.Rotation = math.mul(playerTransform.Rotation, quaternion.Euler(0, yaw, 0));
+        yaw += lookInput.x * sensitivity * SystemAPI.Time.DeltaTime;
+
+        // quaternion.Euler doesn't work the same as Quaternion.Euler, it excepts radians instead of degrees
+        playerTransform.Rotation = quaternion.Euler(0, math.radians(yaw), 0);
 
         state.EntityManager.SetComponentData(playerEntity, playerTransform);
         em.SetComponentData(playerEntity, playerTransform);
