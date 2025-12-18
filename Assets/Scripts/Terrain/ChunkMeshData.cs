@@ -9,5 +9,5 @@ public struct ChunkMeshData : IComponentData
     public NativeList<float3> Vertices;
     public NativeList<int> Triangles;
 
-    public JobHandle currentHandle;
+    public JobHandle currentMeshHandle;
 }

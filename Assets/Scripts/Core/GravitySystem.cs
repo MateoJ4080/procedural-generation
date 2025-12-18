@@ -1,8 +1,5 @@
 using Unity.Entities;
-using Unity.Entities.UniversalDelegates;
 using Unity.Transforms;
-using UnityEngine;
-using UnityEngine.UIElements.Experimental;
 
 public partial struct GravitySystem : ISystem
 {

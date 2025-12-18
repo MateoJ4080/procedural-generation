@@ -183,9 +183,9 @@ public partial class ChunkMeshSystem : SystemBase
             };
             _hasPendingJob = true;
 
-            // Let ChunkMeshData know of the jobHandle so other scripts can wait for the job before using data
+            // Let ChunkMeshData know of the jobHandle so other scripts can wait for the current job before using data
             var data = SystemAPI.GetComponent<ChunkMeshData>(dataEntity);
-            data.currentHandle = _pendingJobHandle;
+            data.currentMeshHandle = _pendingJobHandle;
             SystemAPI.SetComponent(dataEntity, data);
 
             break;
