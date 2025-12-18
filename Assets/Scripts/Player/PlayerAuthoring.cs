@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -17,7 +18,7 @@ public class PlayerAuthoring : MonoBehaviour
             AddComponent<PlayerMoveInput>(entity);
             AddComponent<CameraLookInput>(entity);
             AddComponent<CameraSettings>(entity);
-            AddComponent(entity, new GravityData { Gravity = -9.81f });
+            AddComponent<PhysicsGravityFactor>(entity);
             AddComponent(entity, new PlayerSpeed { Value = authoring.speed });
         }
     }
