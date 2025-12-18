@@ -1,40 +1,62 @@
-using Unity.Collections;
-using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Physics;
+// using System.Diagnostics;
+// using Unity.Burst;
+// using Unity.Collections;
+// using Unity.Entities;
+// using Unity.Jobs;
+// using Unity.Mathematics;
+// using Unity.Physics;
+// using UnityEditor.Build.Pipeline.Tasks;
 
-[UpdateAfter(typeof(ChunkMeshSystem))]
-public partial struct ChunkColliderSystem : ISystem
-{
-    private EntityCommandBuffer ecb;
+// [UpdateAfter(typeof(ChunkMeshSystem))]
+// public partial struct ChunkColliderSystem : ISystem
+// {
+//     private EntityCommandBuffer ecb;
 
-    public void OnUpdate(ref SystemState state)
-    {
-        var ecbSystem = state.World.GetOrCreateSystemManaged<BeginSimulationEntityCommandBufferSystem>();
-        ecb = ecbSystem.CreateCommandBuffer();
+//     public void OnUpdate(ref SystemState state)
+//     {
+//         var swTotal = Stopwatch.StartNew();
 
-        foreach (var (chunk, entity) in SystemAPI.Query<RefRO<Chunk>>().WithNone<PhysicsCollider>().WithEntityAccess())
-        {
-            var tag = SystemAPI.GetSingletonRW<ChunkMeshData>();
-            tag.ValueRW.currentHandle.Complete();
+//         var ecbSystem = state.World.GetOrCreateSystemManaged<BeginSimulationEntityCommandBufferSystem>();
+//         ecb = ecbSystem.CreateCommandBuffer();
 
-            var meshData = SystemAPI.GetSingleton<ChunkMeshData>();
+//         foreach (var (chunk, entity) in SystemAPI.Query<RefRO<Chunk>>().WithNone<PhysicsCollider>().WithEntityAccess())
+//         {
+//             var swForeach = Stopwatch.StartNew();
+//             UnityEngine.Debug.Log("<color=red>[DEBUG]</color> Starting foreach...");
 
-            var flatTris = meshData.Triangles;
-            var trianglesInt3 = new NativeList<int3>(Allocator.Temp); ;
+//             var swMeshWait = Stopwatch.StartNew();
+//             var tag = SystemAPI.GetSingletonRW<ChunkMeshData>();
+//             tag.ValueRW.currentMeshHandle.Complete();
+//             swMeshWait.Stop();
 
-            for (int i = 0; i < meshData.Triangles.Length; i += 3)
-            {
-                trianglesInt3.Add(new int3(flatTris[i], flatTris[i + 1], flatTris[i + 2]));
-            }
+//             var meshData = SystemAPI.GetSingleton<ChunkMeshData>();
+//             var flatTris = meshData.Triangles;
 
-            var meshCollider = MeshCollider.Create(meshData.Vertices.AsArray(), trianglesInt3.AsArray());
-            var physCollider = new PhysicsCollider { Value = meshCollider };
+//             var swTriangles = Stopwatch.StartNew();
+//             var trianglesInt3 = new NativeList<int3>(Allocator.Temp);
+//             for (int i = 0; i < flatTris.Length; i += 3)
+//             {
+//                 trianglesInt3.Add(new int3(flatTris[i], flatTris[i + 1], flatTris[i + 2]));
+//             }
+//             swTriangles.Stop();
 
-            ecb.AddComponent(entity, physCollider);
-            ecb.AddSharedComponent(entity, new PhysicsWorldIndex());
+//             var swCollider = Stopwatch.StartNew();
+//             var meshCollider = MeshCollider.Create(meshData.Vertices.AsArray(), trianglesInt3.AsArray());
+//             var physCollider = new PhysicsCollider { Value = meshCollider };
+//             swCollider.Stop();
 
-            UnityEngine.Debug.Log($"Collider valid = {physCollider.IsValid}");
-        }
-    }
-}
+//             ecb.AddComponent(entity, physCollider);
+//             ecb.AddSharedComponent(entity, new PhysicsWorldIndex());
+
+//             swForeach.Stop();
+
+//             UnityEngine.Debug.Log($"<color=yellow>[DEBUG]</color> Mesh wait: {swMeshWait.Elapsed.TotalMilliseconds:F2} ms");
+//             UnityEngine.Debug.Log($"<color=lime>[DEBUG]</color> Triangles build: {swTriangles.Elapsed.TotalMilliseconds:F2} ms");
+//             UnityEngine.Debug.Log($"<color=green>[DEBUG]</color> Collider create: {swCollider.Elapsed.TotalMilliseconds:F2} ms");
+//             UnityEngine.Debug.Log($"<color=cyan>[DEBUG]</color> Foreach total: {swForeach.Elapsed.TotalMilliseconds:F2} ms");
+//         }
+
+//         swTotal.Stop();
+//         UnityEngine.Debug.Log($"<color=white>[DEBUG]</color> System total: {swTotal.Elapsed.TotalMilliseconds:F2} ms");
+//     }
+// }
