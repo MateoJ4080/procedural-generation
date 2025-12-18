@@ -19,7 +19,6 @@ public partial class ChunkMeshSystem : SystemBase
     public NativeList<int> SharedTriangles;
     public NativeList<float3> SharedNormals;
 
-    // bool debugObjectInstantiated = false;
     private struct PendingMesh
     {
         public Entity Entity;
@@ -124,16 +123,6 @@ public partial class ChunkMeshSystem : SystemBase
                 ecb.SetName(_pendingMeshData.Entity, "ChunkMesh_" + _pendingMeshData.Entity.Index);
                 ecb.Playback(EntityManager);
                 ecb.Dispose();
-
-                // if (!debugObjectInstantiated)
-                // {
-                //     Debug.Log("Generating debug GameObject");
-                //     var go = new GameObject("DebugMesh", typeof(MeshFilter), typeof(MeshRenderer));
-                //     go.GetComponent<MeshFilter>().sharedMesh = mesh;
-                //     go.GetComponent<MeshRenderer>().sharedMaterial = _sharedMaterial;
-                //     go.transform.position = new Vector3(0, 0, 25f);
-                //     debugObjectInstantiated = true;
-                // }
 
                 mesh.RecalculateBounds();
             }
