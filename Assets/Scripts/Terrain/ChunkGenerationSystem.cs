@@ -4,6 +4,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEditor;
 
 public partial struct ChunkGenerationSystem : ISystem
 {
@@ -13,6 +14,10 @@ public partial struct ChunkGenerationSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         chunks = new NativeHashMap<int2, Entity>(100, Allocator.Persistent);
+
+        // Create entity to hold global chunks data
+        Entity e = state.EntityManager.CreateEntity();
+        state.EntityManager.AddComponentData(e, new ChunksGlobalData { Chunks = chunks });
     }
 
     public void OnUpdate(ref SystemState state)
@@ -75,6 +80,12 @@ public partial struct ChunkGenerationSystem : ISystem
                     blocks.Dispose();
 
                     chunks.TryAdd(chunkCoord, entity);
+
+                    // Save chunks map to global data component
+                    Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
+                    state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = chunks });
+
+                    UnityEngine.Debug.Log("Generated chunks : " + chunks.Count);
                 }
             }
         }
