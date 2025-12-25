@@ -60,7 +60,7 @@ public partial class ChunkMeshSystem : SystemBase
         _hasPendingJob = false;
 
         dataEntity = EntityManager.CreateEntity();
-        EntityManager.AddComponentData(dataEntity, new ChunkMeshData
+        EntityManager.AddComponentData(dataEntity, new ChunkData
         {
             Vertices = SharedVertices,
             Triangles = SharedTriangles
@@ -173,7 +173,7 @@ public partial class ChunkMeshSystem : SystemBase
             _hasPendingJob = true;
 
             // Let ChunkMeshData know of the jobHandle so other scripts can wait for the current job before using data
-            var data = SystemAPI.GetComponent<ChunkMeshData>(dataEntity);
+            var data = SystemAPI.GetComponent<ChunkData>(dataEntity);
             data.currentMeshHandle = _pendingJobHandle;
             SystemAPI.SetComponent(dataEntity, data);
 

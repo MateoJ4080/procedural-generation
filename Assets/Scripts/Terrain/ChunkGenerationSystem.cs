@@ -17,7 +17,7 @@ public partial struct ChunkGenerationSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
-        // Alter the terrain in runtime if TerrainConfig values are changed
+        // Regenerate terrain in runtime if TerrainConfig values are changed
         if (SystemAPI.TryGetSingleton<TerrainConfig>(out var config))
         {
             if (!config.Equals(lastConfig))
