@@ -62,6 +62,7 @@ public partial struct ChunkGenerationSystem : ISystem
                         Rotation = quaternion.identity,
                         Scale = 1f
                     });
+                    state.EntityManager.AddComponentData(entity, new ChunkData { position = chunkCoord });
 
                     var blocks = new NativeArray<Block>(16 * 16 * 16, Allocator.TempJob);
 
@@ -81,11 +82,11 @@ public partial struct ChunkGenerationSystem : ISystem
 
                     chunks.TryAdd(chunkCoord, entity);
 
-                    // Save chunks map to global data component
+                    // Save chunks map in single global data component
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
                     state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = chunks });
 
-                    UnityEngine.Debug.Log("Generated chunks : " + chunks.Count);
+                    UnityEngine.Debug.Log("Generated chunks: " + chunks.Count);
                 }
             }
         }
