@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Burst;
 using Unity.Jobs;
-
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
 public partial class ChunkMeshSystem : SystemBase
@@ -40,8 +39,7 @@ public partial class ChunkMeshSystem : SystemBase
     /// </summary>
     private PendingMesh _pendingMeshData;
 
-    // Entity to share data using its components
-    Entity dataEntity;
+    private Entity globalChunkDataEntity;
 
     protected override void OnCreate()
     {
@@ -59,12 +57,7 @@ public partial class ChunkMeshSystem : SystemBase
 
         _hasPendingJob = false;
 
-        dataEntity = EntityManager.CreateEntity();
-        EntityManager.AddComponentData(dataEntity, new ChunkData
-        {
-            Vertices = SharedVertices,
-            Triangles = SharedTriangles
-        });
+        globalChunkDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
     }
 
     protected override void OnDestroy()
@@ -173,14 +166,24 @@ public partial class ChunkMeshSystem : SystemBase
             _hasPendingJob = true;
 
             // Let ChunkMeshData know of the jobHandle so other scripts can wait for the current job before using data
-            var data = SystemAPI.GetComponent<ChunkData>(dataEntity);
+            var data = SystemAPI.GetComponent<ChunksGlobalData>(globalChunkDataEntity);
             data.currentMeshHandle = _pendingJobHandle;
-            SystemAPI.SetComponent(dataEntity, data);
+            SystemAPI.SetComponent(globalChunkDataEntity, data);
 
             break;
         }
     }
 
+    public struct CountFacesJob : IJobParallelFor
+    {
+        public NativeArray<Block> Buffer;
+
+        public NativeArray<Block> LeftChunkBuffer;
+        public NativeArray<Block> RightChunkBuffer;
+        public NativeArray<Block> BackChunkBuffer;
+        public NativeArray<Block> FrontChunkBuffer;
+
+        public int Width;
     [BurstCompile]
     public struct AddFacesJob : IJob
     {
