@@ -18,6 +18,14 @@ public partial class ChunkMeshSystem : SystemBase
     public NativeList<int> SharedTriangles;
     public NativeList<float3> SharedNormals;
 
+    private NativeArray<Block> _emptyBlockArray;
+    private DynamicBuffer<Block> leftChunkBuffer;
+    private DynamicBuffer<Block> rightChunkBuffer;
+    private DynamicBuffer<Block> backChunkBuffer;
+    private DynamicBuffer<Block> frontChunkBuffer;
+
+    private NativeArray<Block> leftArr;
+
     private struct PendingMesh
     {
         public Entity Entity;
@@ -48,6 +56,8 @@ public partial class ChunkMeshSystem : SystemBase
         SharedTriangles = new NativeList<int>(Allocator.Persistent);
         SharedNormals = new NativeList<float3>(Allocator.Persistent);
 
+        _emptyBlockArray = new NativeArray<Block>(0, Allocator.Persistent);
+
         _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         var atlas = Resources.Load<Texture2D>("WSUUw");
         _sharedMaterial.mainTexture = atlas;
@@ -76,6 +86,8 @@ public partial class ChunkMeshSystem : SystemBase
         if (SharedUVs.IsCreated) SharedUVs.Dispose();
         if (SharedTriangles.IsCreated) SharedTriangles.Dispose();
         if (SharedNormals.IsCreated) SharedNormals.Dispose();
+
+        if (_emptyBlockArray.IsCreated) _emptyBlockArray.Dispose();
     }
 
     protected override void OnUpdate()
@@ -84,6 +96,9 @@ public partial class ChunkMeshSystem : SystemBase
         {
             // Complete job to have faces
             _pendingJobHandle.Complete();
+
+            if (leftArr.IsCreated && leftArr != _emptyBlockArray)
+                leftArr.Dispose();
 
             // Check if it exists, otherwise SharedVertices may not be null and try to work with a null _pendingMeshData.
             // Remember entities can be destroyed within RegenerateAllChunks in ChunkGenerationSystem
@@ -136,9 +151,33 @@ public partial class ChunkMeshSystem : SystemBase
             var height = chunk.ValueRO.Height;
             var depth = chunk.ValueRO.Depth;
 
+            // Assign default value so in next iterations doesn't give an incorrect value
+            leftChunkBuffer = default;
+            rightChunkBuffer = default;
+            backChunkBuffer = default;
+            frontChunkBuffer = default;
+
+            // Take adjacent chunk entities
+            NativeHashMap<int2, Entity> chunksMap = SystemAPI.GetComponent<ChunksGlobalData>(globalChunkDataEntity).Chunks;
+            int2 chunkPos = SystemAPI.GetComponent<ChunkData>(entity).ChunkCoord;
+            if (chunksMap.TryGetValue(chunkPos + new int2(-1, 0), out var leftChunk))
+            {
+                leftChunkBuffer = SystemAPI.GetBuffer<Block>(leftChunk);
+            }
+
+            // leftArr assignation
+            if (leftChunkBuffer.IsCreated)
+            {
+                leftArr = new NativeArray<Block>(leftChunkBuffer.Length, Allocator.TempJob);
+                leftArr.CopyFrom(leftChunkBuffer.AsNativeArray());
+            }
+            else leftArr = _emptyBlockArray;
+
             var addFacesJob = new AddFacesJob
             {
                 Buffer = buffer.AsNativeArray(),
+
+                LeftBuffer = leftArr,
 
                 Width = width,
                 Height = height,
@@ -174,16 +213,6 @@ public partial class ChunkMeshSystem : SystemBase
         }
     }
 
-    public struct CountFacesJob : IJobParallelFor
-    {
-        public NativeArray<Block> Buffer;
-
-        public NativeArray<Block> LeftChunkBuffer;
-        public NativeArray<Block> RightChunkBuffer;
-        public NativeArray<Block> BackChunkBuffer;
-        public NativeArray<Block> FrontChunkBuffer;
-
-        public int Width;
     [BurstCompile]
     public struct AddFacesJob : IJob
     {
@@ -191,6 +220,12 @@ public partial class ChunkMeshSystem : SystemBase
         public int Width;
         public int Height;
         public int Depth;
+
+        // Adjacent chunks
+        public NativeArray<Block> LeftBuffer;
+        // public NativeArray<Block> RightBuffer;
+        // public NativeArray<Block> BackBuffer;
+        // public NativeArray<Block> FrontBuffer;
 
         public NativeList<float3> Vertices;
         public NativeList<float2> UVs;
@@ -206,8 +241,8 @@ public partial class ChunkMeshSystem : SystemBase
                 {
                     for (int z = 0; z < Depth; z++)
                     {
-                        int index = x + y * Width + z * Width * Height;
-                        var block = Buffer[index];
+                        int bufferIndex = x + y * Width + z * Width * Height;
+                        var block = Buffer[bufferIndex];
 
                         if (block.Type == 0) continue;
 
@@ -226,10 +261,19 @@ public partial class ChunkMeshSystem : SystemBase
 
         bool IsAir(int x, int y, int z)
         {
-            if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth)
-                return true;
+            int index;
 
-            int index = x + y * Width + z * Width * Height;
+            if (x < 0)
+            {
+                if (LeftBuffer.Length == 0) return true;
+
+                index = x + 16 + y * Width + z * Width * Height;
+                return LeftBuffer[index].Type == 0;
+            }
+
+            if (y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth) return true;
+
+            index = x + y * Width + z * Width * Height;
             return Buffer[index].Type == 0;
         }
 

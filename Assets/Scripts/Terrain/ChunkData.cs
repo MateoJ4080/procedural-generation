@@ -5,6 +5,9 @@ using Unity.Mathematics;
 
 public struct ChunkData : IComponentData
 {
+    // Position relative to the HashMap
+    public int2 ChunkCoord;
+
     // Normals and UVs not neeeded yet, since it's only being used for collider generation
     public NativeList<float3> Vertices;
     public NativeList<int> Triangles;

@@ -4,7 +4,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEditor;
 
 public partial struct ChunkGenerationSystem : ISystem
 {
@@ -62,7 +61,7 @@ public partial struct ChunkGenerationSystem : ISystem
                         Rotation = quaternion.identity,
                         Scale = 1f
                     });
-                    state.EntityManager.AddComponentData(entity, new ChunkData { position = chunkCoord });
+                    state.EntityManager.AddComponentData(entity, new ChunkData { ChunkCoord = chunkCoord });
 
                     var blocks = new NativeArray<Block>(16 * 16 * 16, Allocator.TempJob);
 
