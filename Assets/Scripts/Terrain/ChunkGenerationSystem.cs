@@ -7,16 +7,16 @@ using Unity.Transforms;
 
 public partial struct ChunkGenerationSystem : ISystem
 {
-    private TerrainConfig lastConfig;
-    private NativeHashMap<int2, Entity> chunks;
+    private TerrainConfig _lastConfig;
+    private NativeHashMap<int2, Entity> _chunks;
 
     public void OnCreate(ref SystemState state)
     {
-        chunks = new NativeHashMap<int2, Entity>(100, Allocator.Persistent);
+        _chunks = new NativeHashMap<int2, Entity>(100, Allocator.Persistent);
 
         // Create entity to hold global chunks data
         Entity e = state.EntityManager.CreateEntity();
-        state.EntityManager.AddComponentData(e, new ChunksGlobalData { Chunks = chunks });
+        state.EntityManager.AddComponentData(e, new ChunksGlobalData { Chunks = _chunks });
     }
 
     public void OnUpdate(ref SystemState state)
@@ -24,10 +24,10 @@ public partial struct ChunkGenerationSystem : ISystem
         // Regenerate terrain in runtime if TerrainConfig values are changed
         if (SystemAPI.TryGetSingleton<TerrainConfig>(out var config))
         {
-            if (!config.Equals(lastConfig))
+            if (!config.Equals(_lastConfig))
             {
                 RegenerateAllChunks(ref state, config);
-                lastConfig = config;
+                _lastConfig = config;
             }
         }
 
@@ -50,7 +50,7 @@ public partial struct ChunkGenerationSystem : ISystem
             {
                 int2 chunkCoord = playerChunk + new int2(dx, dz);
 
-                if (!chunks.ContainsKey(chunkCoord))
+                if (!_chunks.ContainsKey(chunkCoord))
                 {
                     var entity = state.EntityManager.CreateEntity();
 
@@ -79,13 +79,13 @@ public partial struct ChunkGenerationSystem : ISystem
                     buffer.CopyFrom(blocks);
                     blocks.Dispose();
 
-                    chunks.TryAdd(chunkCoord, entity);
+                    _chunks.TryAdd(chunkCoord, entity);
 
                     // Save chunks map in single global data component
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
-                    state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = chunks });
+                    state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _chunks });
 
-                    UnityEngine.Debug.Log("Generated chunks: " + chunks.Count);
+                    UnityEngine.Debug.Log("Generated chunks: " + _chunks.Count);
                 }
             }
         }
@@ -93,18 +93,18 @@ public partial struct ChunkGenerationSystem : ISystem
 
     public void OnDestroy(ref SystemState state)
     {
-        if (chunks.IsCreated) chunks.Dispose();
+        if (_chunks.IsCreated) _chunks.Dispose();
     }
 
     // Clear chunks list if TerrainConfig is updated, allowing new generation in the OnUpdate
     private void RegenerateAllChunks(ref SystemState state, TerrainConfig config)
     {
-        foreach (var entity in chunks.GetValueArray(Allocator.Temp))
+        foreach (var entity in _chunks.GetValueArray(Allocator.Temp))
         {
             state.EntityManager.DestroyEntity(entity);
         }
 
-        chunks.Clear();
+        _chunks.Clear();
     }
 }
 

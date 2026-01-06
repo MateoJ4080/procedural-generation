@@ -23,15 +23,15 @@ public partial class ChunkMeshSystem : SystemBase
     private NativeArray<Block> _emptyBlockArrayB; // Back
     private NativeArray<Block> _emptyBlockArrayF; // Ront
 
-    private DynamicBuffer<Block> leftChunkBuffer;
-    private DynamicBuffer<Block> rightChunkBuffer;
-    private DynamicBuffer<Block> backChunkBuffer;
-    private DynamicBuffer<Block> frontChunkBuffer;
+    private DynamicBuffer<Block> _leftChunkBuffer;
+    private DynamicBuffer<Block> _rightChunkBuffer;
+    private DynamicBuffer<Block> _backChunkBuffer;
+    private DynamicBuffer<Block> _frontChunkBuffer;
 
-    private NativeArray<Block> leftArr;
-    private NativeArray<Block> rightArr;
-    private NativeArray<Block> backArr;
-    private NativeArray<Block> frontArr;
+    private NativeArray<Block> _leftArr;
+    private NativeArray<Block> _rightArr;
+    private NativeArray<Block> _backArr;
+    private NativeArray<Block> _frontArr;
 
     private struct PendingMesh
     {
@@ -54,7 +54,7 @@ public partial class ChunkMeshSystem : SystemBase
     /// </summary>
     private PendingMesh _pendingMeshData;
 
-    private Entity globalChunkDataEntity;
+    private Entity _globalChunkDataEntity;
 
     protected override void OnCreate()
     {
@@ -77,7 +77,7 @@ public partial class ChunkMeshSystem : SystemBase
 
         _hasPendingJob = false;
 
-        globalChunkDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
+        _globalChunkDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
     }
 
     protected override void OnDestroy()
@@ -110,10 +110,10 @@ public partial class ChunkMeshSystem : SystemBase
             // Complete job to have faces
             _pendingJobHandle.Complete();
 
-            if (leftArr.IsCreated && leftArr != _emptyBlockArrayL) leftArr.Dispose();
-            if (rightArr.IsCreated && rightArr != _emptyBlockArrayR) rightArr.Dispose();
-            if (backArr.IsCreated && backArr != _emptyBlockArrayB) backArr.Dispose();
-            if (frontArr.IsCreated && frontArr != _emptyBlockArrayF) frontArr.Dispose();
+            if (_leftArr.IsCreated && _leftArr != _emptyBlockArrayL) _leftArr.Dispose();
+            if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
+            if (_backArr.IsCreated && _backArr != _emptyBlockArrayB) _backArr.Dispose();
+            if (_frontArr.IsCreated && _frontArr != _emptyBlockArrayF) _frontArr.Dispose();
 
             // Check if it exists, otherwise SharedVertices may not be null and try to work with a null _pendingMeshData.
             // Remember entities can be destroyed within RegenerateAllChunks in ChunkGenerationSystem
@@ -167,61 +167,61 @@ public partial class ChunkMeshSystem : SystemBase
             var depth = chunk.ValueRO.Depth;
 
             // Assign default value so in next iterations doesn't give an incorrect value
-            leftChunkBuffer = default;
-            rightChunkBuffer = default;
-            backChunkBuffer = default;
-            frontChunkBuffer = default;
+            _leftChunkBuffer = default;
+            _rightChunkBuffer = default;
+            _backChunkBuffer = default;
+            _frontChunkBuffer = default;
 
-            NativeHashMap<int2, Entity> chunksMap = SystemAPI.GetComponent<ChunksGlobalData>(globalChunkDataEntity).Chunks;
+            NativeHashMap<int2, Entity> chunksMap = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity).Chunks;
             int2 chunkPos = SystemAPI.GetComponent<ChunkData>(entity).ChunkCoord;
 
             // Take adjacent chunk entities by position from the HashMap
             if (chunksMap.TryGetValue(chunkPos + new int2(-1, 0), out var leftChunk))
-                leftChunkBuffer = SystemAPI.GetBuffer<Block>(leftChunk);
+                _leftChunkBuffer = SystemAPI.GetBuffer<Block>(leftChunk);
             if (chunksMap.TryGetValue(chunkPos + new int2(1, 0), out var rightChunk))
-                rightChunkBuffer = SystemAPI.GetBuffer<Block>(rightChunk);
+                _rightChunkBuffer = SystemAPI.GetBuffer<Block>(rightChunk);
             if (chunksMap.TryGetValue(chunkPos + new int2(0, -1), out var backChunk))
-                backChunkBuffer = SystemAPI.GetBuffer<Block>(backChunk);
+                _backChunkBuffer = SystemAPI.GetBuffer<Block>(backChunk);
             if (chunksMap.TryGetValue(chunkPos + new int2(0, 1), out var frontChunk))
-                frontChunkBuffer = SystemAPI.GetBuffer<Block>(frontChunk);
+                _frontChunkBuffer = SystemAPI.GetBuffer<Block>(frontChunk);
 
             // Assignation
-            if (leftChunkBuffer.IsCreated)
+            if (_leftChunkBuffer.IsCreated)
             {
-                leftArr = new NativeArray<Block>(leftChunkBuffer.Length, Allocator.TempJob);
-                leftArr.CopyFrom(leftChunkBuffer.AsNativeArray());
+                _leftArr = new NativeArray<Block>(_leftChunkBuffer.Length, Allocator.TempJob);
+                _leftArr.CopyFrom(_leftChunkBuffer.AsNativeArray());
             }
-            else leftArr = _emptyBlockArrayL;
+            else _leftArr = _emptyBlockArrayL;
 
-            if (rightChunkBuffer.IsCreated)
+            if (_rightChunkBuffer.IsCreated)
             {
-                rightArr = new NativeArray<Block>(rightChunkBuffer.Length, Allocator.TempJob);
-                rightArr.CopyFrom(rightChunkBuffer.AsNativeArray());
+                _rightArr = new NativeArray<Block>(_rightChunkBuffer.Length, Allocator.TempJob);
+                _rightArr.CopyFrom(_rightChunkBuffer.AsNativeArray());
             }
-            else rightArr = _emptyBlockArrayR;
+            else _rightArr = _emptyBlockArrayR;
 
-            if (backChunkBuffer.IsCreated)
+            if (_backChunkBuffer.IsCreated)
             {
-                backArr = new NativeArray<Block>(backChunkBuffer.Length, Allocator.TempJob);
-                backArr.CopyFrom(backChunkBuffer.AsNativeArray());
+                _backArr = new NativeArray<Block>(_backChunkBuffer.Length, Allocator.TempJob);
+                _backArr.CopyFrom(_backChunkBuffer.AsNativeArray());
             }
-            else backArr = _emptyBlockArrayB;
+            else _backArr = _emptyBlockArrayB;
 
-            if (frontChunkBuffer.IsCreated)
+            if (_frontChunkBuffer.IsCreated)
             {
-                frontArr = new NativeArray<Block>(frontChunkBuffer.Length, Allocator.TempJob);
-                frontArr.CopyFrom(frontChunkBuffer.AsNativeArray());
+                _frontArr = new NativeArray<Block>(_frontChunkBuffer.Length, Allocator.TempJob);
+                _frontArr.CopyFrom(_frontChunkBuffer.AsNativeArray());
             }
-            else frontArr = _emptyBlockArrayF;
+            else _frontArr = _emptyBlockArrayF;
 
             var addFacesJob = new AddFacesJob
             {
                 Buffer = buffer.AsNativeArray(),
 
-                LeftArray = leftArr,
-                RightArray = rightArr,
-                BackArray = backArr,
-                FrontArray = frontArr,
+                LeftArray = _leftArr,
+                RightArray = _rightArr,
+                BackArray = _backArr,
+                FrontArray = _frontArr,
 
                 Width = width,
                 Height = height,
@@ -249,9 +249,9 @@ public partial class ChunkMeshSystem : SystemBase
             _hasPendingJob = true;
 
             // Let ChunkMeshData know of the jobHandle so other scripts can wait for the current job before using data
-            var data = SystemAPI.GetComponent<ChunksGlobalData>(globalChunkDataEntity);
+            var data = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity);
             data.currentMeshHandle = _pendingJobHandle;
-            SystemAPI.SetComponent(globalChunkDataEntity, data);
+            SystemAPI.SetComponent(_globalChunkDataEntity, data);
 
             break;
         }
