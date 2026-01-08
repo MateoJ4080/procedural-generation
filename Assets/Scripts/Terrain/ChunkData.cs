@@ -5,6 +5,8 @@ using Unity.Mathematics;
 
 public struct ChunkData : IComponentData
 {
+    public bool IsRefreshing;
+
     // Position relative to the HashMap
     public int2 ChunkCoord;
 

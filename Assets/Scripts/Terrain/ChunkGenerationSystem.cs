@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEditor;
 
 public partial struct ChunkGenerationSystem : ISystem
 {
@@ -41,7 +43,7 @@ public partial struct ChunkGenerationSystem : ISystem
         float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
 
         int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
-        int loadRadius = 2;
+        int loadRadius = 7;
 
         // Load new chunks based on player's position
         for (int dx = -loadRadius; dx <= loadRadius; dx++)
@@ -86,7 +88,43 @@ public partial struct ChunkGenerationSystem : ISystem
                     state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _chunks });
 
                     UnityEngine.Debug.Log("Generated chunks: " + _chunks.Count);
+
+                    RegenerateAdjacents(entity, chunkCoord, ref state);
                 }
+            }
+        }
+    }
+
+    public void RegenerateAdjacents(Entity chunkEntity, int2 chunkCoord, ref SystemState state)
+    {
+        UnityEngine.Debug.Log("RegenerateAdjacents");
+        var chunkData = SystemAPI.GetComponent<ChunkData>(chunkEntity);
+
+        if (!chunkData.IsRefreshing)
+        {
+            if (_chunks.TryGetValue(chunkCoord + new int2(-1, 0), out Entity leftChunk))
+            {
+                var leftChunkData = SystemAPI.GetComponent<ChunkData>(leftChunk);
+                leftChunkData.IsRefreshing = true;
+                state.EntityManager.SetComponentData(leftChunk, leftChunkData);
+            }
+            if (_chunks.TryGetValue(chunkCoord + new int2(1, 0), out Entity rightChunk))
+            {
+                var rightChunkData = SystemAPI.GetComponent<ChunkData>(rightChunk);
+                rightChunkData.IsRefreshing = true;
+                state.EntityManager.SetComponentData(rightChunk, rightChunkData);
+            }
+            if (_chunks.TryGetValue(chunkCoord + new int2(0, -1), out Entity backChunk))
+            {
+                var backChunkData = SystemAPI.GetComponent<ChunkData>(backChunk);
+                backChunkData.IsRefreshing = true;
+                state.EntityManager.SetComponentData(backChunk, backChunkData);
+            }
+            if (_chunks.TryGetValue(chunkCoord + new int2(0, 1), out Entity frontChunk))
+            {
+                var frontChunkData = SystemAPI.GetComponent<ChunkData>(frontChunk);
+                frontChunkData.IsRefreshing = true;
+                state.EntityManager.SetComponentData(frontChunk, frontChunkData);
             }
         }
     }

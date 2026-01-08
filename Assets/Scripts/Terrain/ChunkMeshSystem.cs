@@ -175,6 +175,8 @@ public partial class ChunkMeshSystem : SystemBase
             NativeHashMap<int2, Entity> chunksMap = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity).Chunks;
             int2 chunkPos = SystemAPI.GetComponent<ChunkData>(entity).ChunkCoord;
 
+            chunksMap.TryAdd(chunkPos, entity);
+
             // Take adjacent chunk entities by position from the HashMap
             if (chunksMap.TryGetValue(chunkPos + new int2(-1, 0), out var leftChunk))
                 _leftChunkBuffer = SystemAPI.GetBuffer<Block>(leftChunk);
@@ -275,7 +277,6 @@ public partial class ChunkMeshSystem : SystemBase
         public NativeList<float2> UVs;
         public NativeList<int> Triangles;
         public NativeList<float3> Normals;
-
 
         public void Execute()
         {
