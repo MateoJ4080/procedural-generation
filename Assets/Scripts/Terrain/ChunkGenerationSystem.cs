@@ -87,8 +87,6 @@ public partial struct ChunkGenerationSystem : ISystem
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
                     state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _chunks });
 
-                    UnityEngine.Debug.Log("Generated chunks: " + _chunks.Count);
-
                     RegenerateAdjacents(entity, chunkCoord, ref state);
                 }
             }
@@ -97,7 +95,6 @@ public partial struct ChunkGenerationSystem : ISystem
 
     public void RegenerateAdjacents(Entity chunkEntity, int2 chunkCoord, ref SystemState state)
     {
-        UnityEngine.Debug.Log("RegenerateAdjacents");
         var chunkData = SystemAPI.GetComponent<ChunkData>(chunkEntity);
 
         if (!chunkData.IsRefreshing)
