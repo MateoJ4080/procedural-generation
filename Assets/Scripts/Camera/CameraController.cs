@@ -37,7 +37,7 @@ public class CameraController : MonoBehaviour
 
     }
 
-    void Update()
+    void LateUpdate()
     {
         // Movement
         if (player != Entity.Null)
