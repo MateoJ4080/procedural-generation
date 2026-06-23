@@ -93,6 +93,7 @@ public partial struct ChunkGenerationSystem : ISystem
         }
     }
 
+    // To do: regenerate only the specific adjacent face instead of the whole chunk
     public void RegenerateAdjacents(Entity chunkEntity, int2 chunkCoord, ref SystemState state)
     {
         var chunkData = SystemAPI.GetComponent<ChunkData>(chunkEntity);
