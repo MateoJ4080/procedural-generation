@@ -11,8 +11,6 @@ using Unity.Transforms;
 [UpdateAfter(typeof(ChunkGenerationSystem))]
 public partial class ChunkMeshSystem : SystemBase
 {
-    [SerializeField] private Material _sharedMaterial;
-
     // "Shared" as with other scripts
     public NativeList<float3> SharedVertices;
     public NativeList<float2> SharedUVs;
@@ -22,7 +20,7 @@ public partial class ChunkMeshSystem : SystemBase
     private NativeArray<Block> _emptyBlockArrayL; // Left
     private NativeArray<Block> _emptyBlockArrayR; // Right
     private NativeArray<Block> _emptyBlockArrayB; // Back
-    private NativeArray<Block> _emptyBlockArrayF; // Ront
+    private NativeArray<Block> _emptyBlockArrayF; // Front
 
     private DynamicBuffer<Block> _leftChunkBuffer;
     private DynamicBuffer<Block> _rightChunkBuffer;
@@ -73,12 +71,8 @@ public partial class ChunkMeshSystem : SystemBase
         _emptyBlockArrayB = new NativeArray<Block>(0, Allocator.Persistent);
         _emptyBlockArrayF = new NativeArray<Block>(0, Allocator.Persistent);
 
-        _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        var atlas = Resources.Load<Texture2D>("WSUUw");
-        _sharedMaterial.mainTexture = atlas;
 
-        if (atlas == null) Debug.Log("Atlas not found");
-        if (_sharedMaterial == null) Debug.LogError("Shader not found");
+
 
         _hasPendingJob = false;
 
@@ -90,11 +84,6 @@ public partial class ChunkMeshSystem : SystemBase
         if (_hasPendingJob)
         {
             _pendingJobHandle.Complete();
-        }
-
-        if (_sharedMaterial != null)
-        {
-            Object.Destroy(_sharedMaterial);
         }
 
         if (SharedVertices.IsCreated) SharedVertices.Dispose();
@@ -112,8 +101,15 @@ public partial class ChunkMeshSystem : SystemBase
     {
         if (_hasPendingJob)
         {
-            // Complete job to have faces
-            _pendingJobHandle.Complete();
+            var applySystem = World.GetExistingSystemManaged<ChunkMeshApplySystem>();
+            applySystem.Apply(
+                _pendingMeshData.Entity,
+                _pendingJobHandle,
+                SharedVertices,
+                SharedTriangles,
+                SharedNormals,
+                SharedUVs
+            );
 
             if (_leftArr.IsCreated && _leftArr != _emptyBlockArrayL) _leftArr.Dispose();
             if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
@@ -124,35 +120,12 @@ public partial class ChunkMeshSystem : SystemBase
             // Remember entities can be destroyed within RegenerateAllChunks in ChunkGenerationSystem
             if (SharedVertices.Length > 0 && EntityManager.Exists(_pendingMeshData.Entity))
             {
-                // Generate mesh
-                var mesh = new Mesh();
-                mesh.name = $"ChunkMesh_{_pendingMeshData.Entity.Index}";
-                mesh.SetVertices(SharedVertices.AsArray());
-                mesh.SetTriangles(SharedTriangles.AsArray().ToArray(), 0);
-                mesh.SetNormals(SharedNormals.AsArray());
-                mesh.SetUVs(0, SharedUVs.AsArray());
-
-                var desc = new RenderMeshDescription(
-                    shadowCastingMode: ShadowCastingMode.Off,
-                    receiveShadows: false);
-
-                var renderMeshArray = new RenderMeshArray(new[] { _sharedMaterial }, new[] { mesh });
-                RenderMeshUtility.AddComponents(_pendingMeshData.Entity, EntityManager, desc, renderMeshArray, MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
-
                 // If LocalTransform already exists, refresh it to ensure correct render
-                if (EntityManager.HasComponent<Unity.Transforms.LocalTransform>(_pendingMeshData.Entity))
+                if (EntityManager.HasComponent<LocalTransform>(_pendingMeshData.Entity))
                 {
-                    var transform = EntityManager.GetComponentData<Unity.Transforms.LocalTransform>(_pendingMeshData.Entity);
+                    var transform = EntityManager.GetComponentData<LocalTransform>(_pendingMeshData.Entity);
                     EntityManager.SetComponentData(_pendingMeshData.Entity, transform);
                 }
-
-                // EntityCommandBuffer
-                var ecb = new EntityCommandBuffer(Allocator.Temp);
-                ecb.SetName(_pendingMeshData.Entity, "ChunkMesh_" + _pendingMeshData.Entity.Index);
-                ecb.Playback(EntityManager);
-                ecb.Dispose();
-
-                mesh.RecalculateBounds();
             }
             _hasPendingJob = false;
         }
@@ -219,7 +192,6 @@ public partial class ChunkMeshSystem : SystemBase
             if (chunksMap.TryGetValue(chunkPos + new int2(0, 1), out var frontChunk))
                 _frontChunkBuffer = SystemAPI.GetBuffer<Block>(frontChunk);
 
-            // Assignation
             if (_leftChunkBuffer.IsCreated)
             {
                 _leftArr = new NativeArray<Block>(_leftChunkBuffer.Length, Allocator.TempJob);
