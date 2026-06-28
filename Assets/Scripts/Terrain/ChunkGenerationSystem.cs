@@ -1,11 +1,12 @@
-using System.Diagnostics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEditor;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 public partial struct ChunkGenerationSystem : ISystem
 {
@@ -24,12 +25,12 @@ public partial struct ChunkGenerationSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         // Regenerate terrain in runtime if TerrainConfig values are changed
-        if (SystemAPI.TryGetSingleton<TerrainConfig>(out var config))
+        if (SystemAPI.TryGetSingleton<TerrainConfig>(out var terrainConfig))
         {
-            if (!config.Equals(_lastConfig))
+            if (!terrainConfig.Equals(_lastConfig))
             {
-                RegenerateAllChunks(ref state, config);
-                _lastConfig = config;
+                RegenerateAllChunks(ref state, terrainConfig);
+                _lastConfig = terrainConfig;
             }
         }
 
@@ -67,14 +68,14 @@ public partial struct ChunkGenerationSystem : ISystem
 
                     var blocks = new NativeArray<Block>(16 * 16 * 16, Allocator.TempJob);
 
-                    var job = new ChunkHeightJob
+                    var chunkHeightJob = new ChunkHeightJob
                     {
                         chunkCoord = chunkCoord,
-                        config = config,
+                        config = terrainConfig,
                         blocks = blocks
                     };
 
-                    job.Schedule().Complete();
+                    chunkHeightJob.Schedule().Complete();
 
                     var buffer = state.EntityManager.AddBuffer<Block>(entity);
                     buffer.ResizeUninitialized(16 * 16 * 16);
@@ -86,8 +87,6 @@ public partial struct ChunkGenerationSystem : ISystem
                     // Save chunks map in single global data component
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
                     state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _chunks });
-
-                    RegenerateAdjacents(entity, chunkCoord, ref state);
                 }
             }
         }

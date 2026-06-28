@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Burst;
 using Unity.Jobs;
+using Unity.Transforms;
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
 public partial class ChunkMeshSystem : SystemBase
@@ -40,7 +41,11 @@ public partial class ChunkMeshSystem : SystemBase
         public int Height;
         public int Depth;
     }
-
+    private struct MeshTask
+    {
+        public Entity Entity;
+        public int Priority;
+    }
     /// <summary>
     /// Indicates if there's a job running from the previous frame
     /// </summary>
@@ -153,18 +158,45 @@ public partial class ChunkMeshSystem : SystemBase
         }
 
         // For each entity with the component "Chunk", take its block buffer and schedule job to calculate faces
-        foreach (var (chunk, buffer, entity) in SystemAPI.Query<RefRO<Chunk>, DynamicBuffer<Block>>()
+        System.Collections.Generic.List<MeshTask> tasks = new();
+
+        Entity player = SystemAPI.GetSingletonEntity<PlayerTag>();
+        float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
+        int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
+
+        foreach (var (chunkData, entity) in SystemAPI.Query<RefRO<ChunkData>>()
             .WithEntityAccess()
             .WithNone<MaterialMeshInfo>())
         {
+            int2 coord = chunkData.ValueRO.ChunkCoord;
+
+            int dx = coord.x - playerChunk.x;
+            int dz = coord.y - playerChunk.y;
+
+            tasks.Add(new MeshTask
+            {
+                Entity = entity,
+                Priority = dx * dx + dz * dz
+            });
+        }
+
+        tasks.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+
+        if (tasks.Count > 0)
+        {
+            Entity entity = tasks[0].Entity;
+
+            var chunk = SystemAPI.GetComponent<Chunk>(entity);
+            var buffer = SystemAPI.GetBuffer<Block>(entity);
+
             SharedNormals.Clear();
             SharedUVs.Clear();
             SharedTriangles.Clear();
             SharedVertices.Clear();
 
-            var width = chunk.ValueRO.Width;
-            var height = chunk.ValueRO.Height;
-            var depth = chunk.ValueRO.Depth;
+            var width = chunk.Width;
+            var height = chunk.Height;
+            var depth = chunk.Depth;
 
             // Assign default value so in next iterations doesn't give an incorrect value
             _leftChunkBuffer = default;
@@ -248,14 +280,13 @@ public partial class ChunkMeshSystem : SystemBase
                 Height = height,
                 Depth = depth
             };
+
             _hasPendingJob = true;
 
             // Let ChunkMeshData know of the jobHandle so other scripts can wait for the current job before using data
             var data = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity);
             data.currentMeshHandle = _pendingJobHandle;
             SystemAPI.SetComponent(_globalChunkDataEntity, data);
-
-            break;
         }
     }
 
