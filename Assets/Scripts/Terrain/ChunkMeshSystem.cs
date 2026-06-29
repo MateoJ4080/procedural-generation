@@ -181,33 +181,10 @@ public partial class ChunkMeshSystem : SystemBase
             if (chunksMap.TryGetValue(chunkPos + new int2(0, 1), out var frontChunk))
                 _frontChunkBuffer = SystemAPI.GetBuffer<Block>(frontChunk);
 
-            if (_leftChunkBuffer.IsCreated)
-            {
-                _leftArr = new NativeArray<Block>(_leftChunkBuffer.Length, Allocator.TempJob);
-                _leftArr.CopyFrom(_leftChunkBuffer.AsNativeArray());
-            }
-            else _leftArr = _emptyBlockArrayL;
-
-            if (_rightChunkBuffer.IsCreated)
-            {
-                _rightArr = new NativeArray<Block>(_rightChunkBuffer.Length, Allocator.TempJob);
-                _rightArr.CopyFrom(_rightChunkBuffer.AsNativeArray());
-            }
-            else _rightArr = _emptyBlockArrayR;
-
-            if (_backChunkBuffer.IsCreated)
-            {
-                _backArr = new NativeArray<Block>(_backChunkBuffer.Length, Allocator.TempJob);
-                _backArr.CopyFrom(_backChunkBuffer.AsNativeArray());
-            }
-            else _backArr = _emptyBlockArrayB;
-
-            if (_frontChunkBuffer.IsCreated)
-            {
-                _frontArr = new NativeArray<Block>(_frontChunkBuffer.Length, Allocator.TempJob);
-                _frontArr.CopyFrom(_frontChunkBuffer.AsNativeArray());
-            }
-            else _frontArr = _emptyBlockArrayF;
+            _leftArr = ToNativeArray(_leftChunkBuffer, _emptyBlockArrayL);
+            _rightArr = ToNativeArray(_rightChunkBuffer, _emptyBlockArrayR);
+            _backArr = ToNativeArray(_backChunkBuffer, _emptyBlockArrayB);
+            _frontArr = ToNativeArray(_frontChunkBuffer, _emptyBlockArrayF);
 
             var addFacesJob = new AddFacesJob
             {
@@ -249,5 +226,15 @@ public partial class ChunkMeshSystem : SystemBase
             data.currentMeshHandle = _pendingJobHandle;
             SystemAPI.SetComponent(_globalChunkDataEntity, data);
         }
+    }
+
+    private NativeArray<Block> ToNativeArray(DynamicBuffer<Block> buffer, NativeArray<Block> emptyArray)
+    {
+        if (!buffer.IsCreated)
+            return emptyArray;
+
+        var array = new NativeArray<Block>(buffer.Length, Allocator.TempJob);
+        array.CopyFrom(buffer.AsNativeArray());
+        return array;
     }
 }
