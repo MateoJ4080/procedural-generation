@@ -111,22 +111,6 @@ public partial class ChunkMeshSystem : SystemBase
                 SharedUVs
             );
 
-            if (_leftArr.IsCreated && _leftArr != _emptyBlockArrayL) _leftArr.Dispose();
-            if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
-            if (_backArr.IsCreated && _backArr != _emptyBlockArrayB) _backArr.Dispose();
-            if (_frontArr.IsCreated && _frontArr != _emptyBlockArrayF) _frontArr.Dispose();
-
-            // Check if it exists, otherwise SharedVertices may not be null and try to work with a null _pendingMeshData.
-            // Remember entities can be destroyed within RegenerateAllChunks in ChunkGenerationSystem
-            if (SharedVertices.Length > 0 && EntityManager.Exists(_pendingMeshData.Entity))
-            {
-                // If LocalTransform already exists, refresh it to ensure correct render
-                if (EntityManager.HasComponent<LocalTransform>(_pendingMeshData.Entity))
-                {
-                    var transform = EntityManager.GetComponentData<LocalTransform>(_pendingMeshData.Entity);
-                    EntityManager.SetComponentData(_pendingMeshData.Entity, transform);
-                }
-            }
             _hasPendingJob = false;
         }
 
@@ -136,6 +120,11 @@ public partial class ChunkMeshSystem : SystemBase
         Entity player = SystemAPI.GetSingletonEntity<PlayerTag>();
         float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
         int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
+
+        if (_leftArr.IsCreated && _leftArr != _emptyBlockArrayL) _leftArr.Dispose();
+        if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
+        if (_backArr.IsCreated && _backArr != _emptyBlockArrayB) _backArr.Dispose();
+        if (_frontArr.IsCreated && _frontArr != _emptyBlockArrayF) _frontArr.Dispose();
 
         foreach (var (chunkData, entity) in SystemAPI.Query<RefRO<ChunkData>>()
             .WithEntityAccess()
