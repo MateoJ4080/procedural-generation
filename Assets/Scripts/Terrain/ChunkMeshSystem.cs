@@ -94,7 +94,7 @@ public partial class ChunkMeshSystem : SystemBase
         if (_emptyBlockArrayF.IsCreated) _emptyBlockArrayF.Dispose();
     }
 
-    protected override void OnUpdate()
+    private void CompletePendingMesh()
     {
         if (_hasPendingJob)
         {
@@ -110,11 +110,23 @@ public partial class ChunkMeshSystem : SystemBase
 
             _hasPendingJob = false;
         }
+    }
 
+    private void DisposeNeighborArrays()
+    {
         if (_leftArr.IsCreated && _leftArr != _emptyBlockArrayL) _leftArr.Dispose();
         if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
         if (_backArr.IsCreated && _backArr != _emptyBlockArrayB) _backArr.Dispose();
         if (_frontArr.IsCreated && _frontArr != _emptyBlockArrayF) _frontArr.Dispose();
+    }
+
+    protected override void OnUpdate()
+    {
+        CompletePendingMesh();
+        DisposeNeighborArrays();
+        ScheduleNextJob();
+    }
+
     private void ScheduleNextJob()
     {
         Entity player = SystemAPI.GetSingletonEntity<PlayerTag>();
