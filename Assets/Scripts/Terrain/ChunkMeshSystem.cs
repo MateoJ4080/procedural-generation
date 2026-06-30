@@ -71,9 +71,6 @@ public partial class ChunkMeshSystem : SystemBase
         _emptyBlockArrayB = new NativeArray<Block>(0, Allocator.Persistent);
         _emptyBlockArrayF = new NativeArray<Block>(0, Allocator.Persistent);
 
-
-
-
         _hasPendingJob = false;
 
         _globalChunkDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
@@ -114,18 +111,18 @@ public partial class ChunkMeshSystem : SystemBase
             _hasPendingJob = false;
         }
 
-        // For each entity with the component "Chunk", take its block buffer and schedule job to calculate faces
-        System.Collections.Generic.List<MeshTask> tasks = new();
-
-        Entity player = SystemAPI.GetSingletonEntity<PlayerTag>();
-        float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
-        int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
-
         if (_leftArr.IsCreated && _leftArr != _emptyBlockArrayL) _leftArr.Dispose();
         if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
         if (_backArr.IsCreated && _backArr != _emptyBlockArrayB) _backArr.Dispose();
         if (_frontArr.IsCreated && _frontArr != _emptyBlockArrayF) _frontArr.Dispose();
+    private void ScheduleNextJob()
+    {
+        Entity player = SystemAPI.GetSingletonEntity<PlayerTag>();
+        float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
+        int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
 
+        // For each entity, create a task to schedule its faces
+        System.Collections.Generic.List<MeshTask> tasks = new();
         foreach (var (chunkData, entity) in SystemAPI.Query<RefRO<ChunkData>>()
             .WithEntityAccess()
             .WithNone<MaterialMeshInfo>())
@@ -151,16 +148,16 @@ public partial class ChunkMeshSystem : SystemBase
             var chunk = SystemAPI.GetComponent<Chunk>(entity);
             var buffer = SystemAPI.GetBuffer<Block>(entity);
 
+            var width = chunk.Width;
+            var height = chunk.Height;
+            var depth = chunk.Depth;
+
             SharedNormals.Clear();
             SharedUVs.Clear();
             SharedTriangles.Clear();
             SharedVertices.Clear();
 
-            var width = chunk.Width;
-            var height = chunk.Height;
-            var depth = chunk.Depth;
-
-            // Assign default value so in next iterations doesn't give an incorrect value
+            // Assign default value so in next iterations it doesn't give an incorrect value
             _leftChunkBuffer = default;
             _rightChunkBuffer = default;
             _backChunkBuffer = default;
@@ -168,10 +165,8 @@ public partial class ChunkMeshSystem : SystemBase
 
             NativeHashMap<int2, Entity> chunksMap = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity).Chunks;
             int2 chunkPos = SystemAPI.GetComponent<ChunkData>(entity).ChunkCoord;
-
             chunksMap.TryAdd(chunkPos, entity);
 
-            // Take adjacent chunk entities by position from the HashMap
             if (chunksMap.TryGetValue(chunkPos + new int2(-1, 0), out var leftChunk))
                 _leftChunkBuffer = SystemAPI.GetBuffer<Block>(leftChunk);
             if (chunksMap.TryGetValue(chunkPos + new int2(1, 0), out var rightChunk))
