@@ -2,9 +2,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
-using UnityEngine;
-using UnityEngine.Rendering;
-using Unity.Burst;
 using Unity.Jobs;
 using Unity.Transforms;
 // UpdateAfter to wait for the chunk data
@@ -76,22 +73,11 @@ public partial class ChunkMeshSystem : SystemBase
         _globalChunkDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
     }
 
-    protected override void OnDestroy()
+    protected override void OnUpdate()
     {
-        if (_hasPendingJob)
-        {
-            _pendingJobHandle.Complete();
-        }
-
-        if (SharedVertices.IsCreated) SharedVertices.Dispose();
-        if (SharedUVs.IsCreated) SharedUVs.Dispose();
-        if (SharedTriangles.IsCreated) SharedTriangles.Dispose();
-        if (SharedNormals.IsCreated) SharedNormals.Dispose();
-
-        if (_emptyBlockArrayL.IsCreated) _emptyBlockArrayL.Dispose();
-        if (_emptyBlockArrayR.IsCreated) _emptyBlockArrayR.Dispose();
-        if (_emptyBlockArrayB.IsCreated) _emptyBlockArrayB.Dispose();
-        if (_emptyBlockArrayF.IsCreated) _emptyBlockArrayF.Dispose();
+        CompletePendingMesh();
+        DisposeNeighborArrays();
+        ScheduleNextJob();
     }
 
     private void CompletePendingMesh()
@@ -118,13 +104,6 @@ public partial class ChunkMeshSystem : SystemBase
         if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
         if (_backArr.IsCreated && _backArr != _emptyBlockArrayB) _backArr.Dispose();
         if (_frontArr.IsCreated && _frontArr != _emptyBlockArrayF) _frontArr.Dispose();
-    }
-
-    protected override void OnUpdate()
-    {
-        CompletePendingMesh();
-        DisposeNeighborArrays();
-        ScheduleNextJob();
     }
 
     private void ScheduleNextJob()
@@ -227,11 +206,6 @@ public partial class ChunkMeshSystem : SystemBase
             };
 
             _hasPendingJob = true;
-
-            // Let ChunkMeshData know of the jobHandle so other scripts can wait for the current job before using data
-            var data = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity);
-            data.currentMeshHandle = _pendingJobHandle;
-            SystemAPI.SetComponent(_globalChunkDataEntity, data);
         }
     }
 
@@ -243,5 +217,23 @@ public partial class ChunkMeshSystem : SystemBase
         var array = new NativeArray<Block>(buffer.Length, Allocator.TempJob);
         array.CopyFrom(buffer.AsNativeArray());
         return array;
+    }
+
+    protected override void OnDestroy()
+    {
+        if (_hasPendingJob)
+        {
+            _pendingJobHandle.Complete();
+        }
+
+        if (SharedVertices.IsCreated) SharedVertices.Dispose();
+        if (SharedUVs.IsCreated) SharedUVs.Dispose();
+        if (SharedTriangles.IsCreated) SharedTriangles.Dispose();
+        if (SharedNormals.IsCreated) SharedNormals.Dispose();
+
+        if (_emptyBlockArrayL.IsCreated) _emptyBlockArrayL.Dispose();
+        if (_emptyBlockArrayR.IsCreated) _emptyBlockArrayR.Dispose();
+        if (_emptyBlockArrayB.IsCreated) _emptyBlockArrayB.Dispose();
+        if (_emptyBlockArrayF.IsCreated) _emptyBlockArrayF.Dispose();
     }
 }

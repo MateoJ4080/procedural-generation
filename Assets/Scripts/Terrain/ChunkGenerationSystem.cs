@@ -4,9 +4,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Diagnostics;
 
 public partial struct ChunkGenerationSystem : ISystem
 {
@@ -19,6 +16,7 @@ public partial struct ChunkGenerationSystem : ISystem
 
         // Create entity to hold global chunks data
         Entity e = state.EntityManager.CreateEntity();
+        state.EntityManager.SetName(e, "ChunksGlobalData");
         state.EntityManager.AddComponentData(e, new ChunksGlobalData { Chunks = _chunks });
     }
 
