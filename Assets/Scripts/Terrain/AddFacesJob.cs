@@ -7,7 +7,7 @@ using UnityEngine;
 [BurstCompile]
 public struct AddFacesJob : IJob
 {
-    [ReadOnly] public NativeArray<Block> Buffer; // DynamicBuffer can't be used in jobs; NativeArray provides native blittable memory (needed by the Job System)
+    [ReadOnly] public NativeArray<Block> BufferAsArray; // DynamicBuffer can't be used in jobs; NativeArray provides native blittable memory (needed by the Job System)
     public int Width;
     public int Height;
     public int Depth;
@@ -32,7 +32,7 @@ public struct AddFacesJob : IJob
                 for (int z = 0; z < Depth; z++)
                 {
                     int bufferIndex = x + y * Width + z * Width * Height;
-                    var block = Buffer[bufferIndex];
+                    var block = BufferAsArray[bufferIndex];
 
                     if (block.Type == 0) continue;
 
@@ -84,7 +84,7 @@ public struct AddFacesJob : IJob
         if (y < 0 || y >= Height) return true;
 
         index = x + y * Width + z * Width * Height;
-        return Buffer[index].Type == 0;
+        return BufferAsArray[index].Type == 0;
     }
 
     void AddVisibleFaces(int3 pos, bool right, bool left, bool top, bool bottom, bool front, bool back)

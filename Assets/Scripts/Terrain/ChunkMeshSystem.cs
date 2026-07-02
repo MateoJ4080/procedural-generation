@@ -174,7 +174,7 @@ public partial class ChunkMeshSystem : SystemBase
 
             var addFacesJob = new AddFacesJob
             {
-                Buffer = buffer.AsNativeArray(),
+                BufferAsArray = buffer.AsNativeArray(),
 
                 LeftArray = _leftArr,
                 RightArray = _rightArr,

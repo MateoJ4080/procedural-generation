@@ -6,14 +6,15 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using Unity.Physics;
 
 public partial class ChunkMeshApplySystem : SystemBase
 {
-    private Material _sharedMaterial;
+    private UnityEngine.Material _sharedMaterial;
 
     protected override void OnCreate()
     {
-        _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        _sharedMaterial = new UnityEngine.Material(Shader.Find("Universal Render Pipeline/Lit"));
         var atlas = Resources.Load<Texture2D>("WSUUw");
 
         if (_sharedMaterial == null)
@@ -76,6 +77,28 @@ public partial class ChunkMeshApplySystem : SystemBase
             renderMeshArray,
             MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0)
         );
+
+        var trianglesInt3 = new NativeArray<int3>(triangles.Length / 3, Allocator.Temp);
+
+        for (int i = 0; i < trianglesInt3.Length; i++)
+        {
+            trianglesInt3[i] = new int3(
+                triangles[i * 3],
+                triangles[i * 3 + 1],
+                triangles[i * 3 + 2]);
+        }
+
+        var collider = Unity.Physics.MeshCollider.Create(vertices.AsArray(), trianglesInt3);
+
+        var physicsCollider = new PhysicsCollider
+        {
+            Value = collider
+        };
+
+        if (EntityManager.HasComponent<PhysicsCollider>(entity))
+            EntityManager.SetComponentData(entity, physicsCollider);
+        else
+            EntityManager.AddComponentData(entity, physicsCollider);
 
         // If LocalTransform already exists, refresh it to ensure correct render
         if (EntityManager.HasComponent<LocalTransform>(entity))
