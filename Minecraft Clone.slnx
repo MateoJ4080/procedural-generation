@@ -46,6 +46,7 @@
   <Project Path="Unity.Collections.CodeGen.csproj" />
   <Project Path="Unity.Entities.Hybrid.HybridComponents.csproj" />
   <Project Path="Unity.Mathematics.Editor.csproj" />
+  <Project Path="Unity.CharacterController.csproj" />
   <Project Path="Unity.VisualScripting.SettingsProvider.Editor.csproj" />
   <Project Path="Unity.Entities.UI.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />

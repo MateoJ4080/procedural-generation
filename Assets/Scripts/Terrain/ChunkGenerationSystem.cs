@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 
 public partial struct ChunkGenerationSystem : ISystem
@@ -63,6 +64,7 @@ public partial struct ChunkGenerationSystem : ISystem
                         Scale = 1f
                     });
                     state.EntityManager.AddComponentData(entity, new ChunkData { ChunkCoord = chunkCoord });
+                    state.EntityManager.AddSharedComponent(entity, new PhysicsWorldIndex(0));
 
                     var blocks = new NativeArray<Block>(16 * 16 * 16, Allocator.TempJob);
 
