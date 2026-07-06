@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Jobs;
 using Unity.Transforms;
+
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
 public partial class ChunkMeshSystem : SystemBase
@@ -114,6 +115,7 @@ public partial class ChunkMeshSystem : SystemBase
 
         // For each entity, create a task to schedule its faces
         System.Collections.Generic.List<MeshTask> tasks = new();
+
         foreach (var (chunkData, entity) in SystemAPI.Query<RefRO<ChunkData>>()
             .WithEntityAccess()
             .WithNone<MaterialMeshInfo>())
@@ -191,7 +193,6 @@ public partial class ChunkMeshSystem : SystemBase
                 Normals = SharedNormals
             };
 
-            // Schedules job to complete on the next frame
             _pendingJobHandle = addFacesJob.Schedule();
 
             // Makes sure to wait for the faces before creating the mesh right in the next line

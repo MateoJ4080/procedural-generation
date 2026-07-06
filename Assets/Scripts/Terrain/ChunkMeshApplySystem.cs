@@ -7,9 +7,12 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 using Unity.Physics;
+using Unity.Profiling;
 
 public partial class ChunkMeshApplySystem : SystemBase
 {
+    private static readonly ProfilerMarker CreateColliderMarker = new("ChunkMeshApply.CreateCollider");
+
     private UnityEngine.Material _sharedMaterial;
 
     protected override void OnCreate()
@@ -38,12 +41,12 @@ public partial class ChunkMeshApplySystem : SystemBase
     }
 
     public void Apply(
-        Entity entity,
-        JobHandle handle,
-        NativeList<float3> vertices,
-        NativeList<int> triangles,
-        NativeList<float3> normals,
-        NativeList<float2> uvs)
+    Entity entity,
+    JobHandle handle,
+    NativeList<float3> vertices,
+    NativeList<int> triangles,
+    NativeList<float3> normals,
+    NativeList<float2> uvs)
     {
         handle.Complete();
 
@@ -52,7 +55,9 @@ public partial class ChunkMeshApplySystem : SystemBase
         if (!EntityManager.Exists(entity) || vertices.Length == 0)
             return;
 
-        var mesh = new Mesh();
+        Mesh mesh;
+
+        mesh = new Mesh();
         mesh.name = $"ChunkMesh_{entity.Index}";
         mesh.SetVertices(vertices.AsArray());
         mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
@@ -78,27 +83,32 @@ public partial class ChunkMeshApplySystem : SystemBase
             MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0)
         );
 
-        var trianglesInt3 = new NativeArray<int3>(triangles.Length / 3, Allocator.Temp);
-
-        for (int i = 0; i < trianglesInt3.Length; i++)
+        using (CreateColliderMarker.Auto())
         {
-            trianglesInt3[i] = new int3(
-                triangles[i * 3],
-                triangles[i * 3 + 1],
-                triangles[i * 3 + 2]);
+            var trianglesInt3 = new NativeArray<int3>(triangles.Length / 3, Allocator.Temp);
+
+            for (int i = 0; i < trianglesInt3.Length; i++)
+            {
+                trianglesInt3[i] = new int3(
+                    triangles[i * 3],
+                    triangles[i * 3 + 1],
+                    triangles[i * 3 + 2]);
+            }
+
+            var collider = Unity.Physics.MeshCollider.Create(vertices.AsArray(), trianglesInt3);
+
+            trianglesInt3.Dispose();
+
+            var physicsCollider = new PhysicsCollider
+            {
+                Value = collider
+            };
+
+            if (EntityManager.HasComponent<PhysicsCollider>(entity))
+                EntityManager.SetComponentData(entity, physicsCollider);
+            else
+                EntityManager.AddComponentData(entity, physicsCollider);
         }
-
-        var collider = Unity.Physics.MeshCollider.Create(vertices.AsArray(), trianglesInt3);
-
-        var physicsCollider = new PhysicsCollider
-        {
-            Value = collider
-        };
-
-        if (EntityManager.HasComponent<PhysicsCollider>(entity))
-            EntityManager.SetComponentData(entity, physicsCollider);
-        else
-            EntityManager.AddComponentData(entity, physicsCollider);
 
         // If LocalTransform already exists, refresh it to ensure correct render
         if (EntityManager.HasComponent<LocalTransform>(entity))
