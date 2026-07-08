@@ -17,6 +17,9 @@ public struct FirstPersonCharacterComponent : IComponentData
     public bool PreventAirAccelerationAgainstUngroundedHits;
     public BasicStepAndSlopeHandlingParameters StepAndSlopeHandling;
 
+    public float DetectionRange;
+    public float LookSensitivity;
+
     public float MinViewAngle;
     public float MaxViewAngle;
 

@@ -45,7 +45,7 @@ public partial struct ChunkGenerationSystem : ISystem
         int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
         int loadRadius = 7;
 
-        // Load new chunks based on player's position
+        // Load new chunks based on player position
         for (int dx = -loadRadius; dx <= loadRadius; dx++)
         {
             for (int dz = -loadRadius; dz <= loadRadius; dz++)
@@ -64,6 +64,7 @@ public partial struct ChunkGenerationSystem : ISystem
                         Scale = 1f
                     });
                     state.EntityManager.AddComponentData(entity, new ChunkData { ChunkCoord = chunkCoord });
+                    state.EntityManager.AddComponentData(entity, new ChunkTag());
                     state.EntityManager.AddSharedComponent(entity, new PhysicsWorldIndex(0));
 
                     var blocks = new NativeArray<Block>(16 * 16 * 16, Allocator.TempJob);

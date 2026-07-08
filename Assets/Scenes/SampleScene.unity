@@ -815,7 +815,7 @@ Transform:
   m_GameObject: {fileID: 1390700638}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -36.4, y: 10.5, z: -1.08641}
+  m_LocalPosition: {x: -36.4, y: 0.17, z: -1.08641}
   m_LocalScale: {x: 5, y: 1, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -933,7 +933,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1675419656}
   - component: {fileID: 1675419655}
-  - component: {fileID: 1675419654}
   m_Layer: 0
   m_Name: New Sub Scene
   m_TagString: Untagged
@@ -941,19 +940,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1675419654
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1675419653}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0de38c2459c1cb449bcdbcc086ad89c5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerAuthoring
-  speed: 5
 --- !u!114 &1675419655
 MonoBehaviour:
   m_ObjectHideFlags: 0

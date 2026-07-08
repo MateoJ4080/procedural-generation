@@ -18,6 +18,7 @@ public class FirstPersonCharacterViewAuthoring : MonoBehaviour
 
             Entity entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent(entity, new FirstPersonCharacterView { CharacterEntity = GetEntity(authoring.Character, TransformUsageFlags.Dynamic) });
+            AddComponent(entity, new PlayerViewTag());
         }
     }
 

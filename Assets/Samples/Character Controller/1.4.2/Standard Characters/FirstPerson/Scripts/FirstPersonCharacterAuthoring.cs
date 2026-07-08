@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using Unity.CharacterController;
+using Unity.Physics;
 
 [DisallowMultipleComponent]
 public class FirstPersonCharacterAuthoring : MonoBehaviour
@@ -18,6 +19,8 @@ public class FirstPersonCharacterAuthoring : MonoBehaviour
     public float3 Gravity = math.up() * -30f;
     public bool PreventAirAccelerationAgainstUngroundedHits = true;
     public BasicStepAndSlopeHandlingParameters StepAndSlopeHandling = BasicStepAndSlopeHandlingParameters.GetDefault();
+    public float DetectionRange = 1;
+    public float LookSensitivity = 1;
     public float MinViewAngle = -90f;
     public float MaxViewAngle = 90f;
 
@@ -41,6 +44,10 @@ public class FirstPersonCharacterAuthoring : MonoBehaviour
                 Gravity = authoring.Gravity,
                 PreventAirAccelerationAgainstUngroundedHits = authoring.PreventAirAccelerationAgainstUngroundedHits,
                 StepAndSlopeHandling = authoring.StepAndSlopeHandling,
+
+                DetectionRange = authoring.DetectionRange,
+                LookSensitivity = authoring.LookSensitivity,
+
                 MinViewAngle = authoring.MinViewAngle,
                 MaxViewAngle = authoring.MaxViewAngle,
 
