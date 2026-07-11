@@ -31,9 +31,20 @@ public partial struct BlockDetectionSystem : ISystem
             }
         };
 
+        var hovered = SystemAPI.GetSingletonRW<HoveredBlock>();
+
         if (collisionWorld.CastRay(input, out RaycastHit hit))
         {
-            UnityEngine.Debug.Log($"Hit entity: {hit.Entity}");
+
+            hovered.ValueRW.Chunk = hit.Entity;
+            float3 pointInsideBlock = hit.Position - hit.SurfaceNormal * 0.001f; // Make sure an adjacent block isn't registered instead (the raycast actually ends in the block right before the hovered one)
+            int3 blockPos = (int3)math.floor(pointInsideBlock);
+
+            hovered.ValueRW.BlockPosition = blockPos;
+        }
+        else
+        {
+            hovered.ValueRW.Chunk = Entity.Null;
         }
 
         UnityEngine.Debug.DrawLine(start, end, UnityEngine.Color.red, 1f);
