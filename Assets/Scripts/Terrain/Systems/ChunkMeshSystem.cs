@@ -10,10 +10,10 @@ using Unity.Transforms;
 public partial class ChunkMeshSystem : SystemBase
 {
     // "Shared" as with other scripts
-    public NativeList<float3> SharedVertices;
-    public NativeList<float2> SharedUVs;
-    public NativeList<int> SharedTriangles;
-    public NativeList<float3> SharedNormals;
+    private NativeList<float3> vertices;
+    private NativeList<float2> uvs;
+    private NativeList<int> triangles;
+    private NativeList<float3> normals;
 
     private NativeArray<Block> _emptyBlockArrayL; // Left
     private NativeArray<Block> _emptyBlockArrayR; // Right
@@ -59,10 +59,10 @@ public partial class ChunkMeshSystem : SystemBase
 
     protected override void OnCreate()
     {
-        SharedVertices = new NativeList<float3>(Allocator.Persistent);
-        SharedUVs = new NativeList<float2>(Allocator.Persistent);
-        SharedTriangles = new NativeList<int>(Allocator.Persistent);
-        SharedNormals = new NativeList<float3>(Allocator.Persistent);
+        vertices = new NativeList<float3>(Allocator.Persistent);
+        uvs = new NativeList<float2>(Allocator.Persistent);
+        triangles = new NativeList<int>(Allocator.Persistent);
+        normals = new NativeList<float3>(Allocator.Persistent);
 
         _emptyBlockArrayL = new NativeArray<Block>(0, Allocator.Persistent);
         _emptyBlockArrayR = new NativeArray<Block>(0, Allocator.Persistent);
@@ -89,10 +89,10 @@ public partial class ChunkMeshSystem : SystemBase
             applySystem.Apply(
                 _pendingMeshData.Entity,
                 _pendingJobHandle,
-                SharedVertices,
-                SharedTriangles,
-                SharedNormals,
-                SharedUVs
+                vertices,
+                triangles,
+                normals,
+                uvs
             );
 
             _hasPendingJob = false;
@@ -145,10 +145,10 @@ public partial class ChunkMeshSystem : SystemBase
             var height = chunk.Height;
             var depth = chunk.Depth;
 
-            SharedNormals.Clear();
-            SharedUVs.Clear();
-            SharedTriangles.Clear();
-            SharedVertices.Clear();
+            normals.Clear();
+            uvs.Clear();
+            triangles.Clear();
+            vertices.Clear();
 
             // Assign default value so in next iterations it doesn't give an incorrect value
             _leftChunkBuffer = default;
@@ -187,10 +187,10 @@ public partial class ChunkMeshSystem : SystemBase
                 Height = height,
                 Depth = depth,
 
-                Vertices = SharedVertices,
-                UVs = SharedUVs,
-                Triangles = SharedTriangles,
-                Normals = SharedNormals
+                Vertices = vertices,
+                UVs = uvs,
+                Triangles = triangles,
+                Normals = normals
             };
 
             _pendingJobHandle = addFacesJob.Schedule();
@@ -227,10 +227,10 @@ public partial class ChunkMeshSystem : SystemBase
             _pendingJobHandle.Complete();
         }
 
-        if (SharedVertices.IsCreated) SharedVertices.Dispose();
-        if (SharedUVs.IsCreated) SharedUVs.Dispose();
-        if (SharedTriangles.IsCreated) SharedTriangles.Dispose();
-        if (SharedNormals.IsCreated) SharedNormals.Dispose();
+        if (vertices.IsCreated) vertices.Dispose();
+        if (uvs.IsCreated) uvs.Dispose();
+        if (triangles.IsCreated) triangles.Dispose();
+        if (normals.IsCreated) normals.Dispose();
 
         if (_emptyBlockArrayL.IsCreated) _emptyBlockArrayL.Dispose();
         if (_emptyBlockArrayR.IsCreated) _emptyBlockArrayR.Dispose();
