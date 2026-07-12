@@ -85,6 +85,8 @@ public partial struct ChunkGenerationSystem : ISystem
                     // Save chunks map in single global data component
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
                     state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _chunks });
+
+                    RegenerateAdjacentChunks(entity, chunkCoord, ref state);
                 }
             }
         }
