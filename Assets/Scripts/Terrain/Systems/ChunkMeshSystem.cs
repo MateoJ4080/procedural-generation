@@ -30,13 +30,6 @@ public partial class ChunkMeshSystem : SystemBase
     private NativeArray<Block> _backArr;
     private NativeArray<Block> _frontArr;
 
-    private struct PendingMesh
-    {
-        public Entity Entity;
-        public int Width;
-        public int Height;
-        public int Depth;
-    }
     private struct MeshTask
     {
         public Entity Entity;
@@ -51,9 +44,9 @@ public partial class ChunkMeshSystem : SystemBase
     /// </summary>
     private JobHandle _pendingJobHandle;
     /// <summary>
-    /// Stores entity data to use when the job finishes. This is to avoid the mesh and the 
+    /// The current entity being worked on
     /// </summary>
-    private PendingMesh _pendingMeshData;
+    private Entity _pendingEntity;
 
     private Entity _globalChunkDataEntity;
 
@@ -87,7 +80,7 @@ public partial class ChunkMeshSystem : SystemBase
         {
             var applySystem = World.GetExistingSystemManaged<ChunkMeshApplySystem>();
             applySystem.Apply(
-                _pendingMeshData.Entity,
+                _pendingEntity,
                 _pendingJobHandle,
                 vertices,
                 triangles,
@@ -198,13 +191,7 @@ public partial class ChunkMeshSystem : SystemBase
             // Makes sure to wait for the faces before creating the mesh right in the next line
             Dependency = _pendingJobHandle;
 
-            _pendingMeshData = new PendingMesh
-            {
-                Entity = entity,
-                Width = width,
-                Height = height,
-                Depth = depth
-            };
+            _pendingEntity = entity;
 
             _hasPendingJob = true;
         }
