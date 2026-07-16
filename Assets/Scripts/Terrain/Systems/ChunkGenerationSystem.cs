@@ -3,6 +3,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Profiling;
 using Unity.Transforms;
 
 public partial struct ChunkGenerationSystem : ISystem
@@ -73,7 +74,7 @@ public partial struct ChunkGenerationSystem : ISystem
                         config = terrainConfig,
                         blocks = blocks
                     };
-                    chunkHeightJob.Schedule().Complete();
+                    chunkHeightJob.ScheduleParallel(16 * 16, 16, default).Complete();
 
                     var buffer = state.EntityManager.AddBuffer<Block>(entity);
                     buffer.ResizeUninitialized(16 * 16 * 16);
