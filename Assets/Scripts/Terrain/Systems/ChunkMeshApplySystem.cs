@@ -40,29 +40,22 @@ public partial class ChunkMeshApplySystem : SystemBase
             Object.Destroy(_sharedMaterial);
     }
 
-    public void Apply(
-    Entity entity,
-    JobHandle handle,
-    NativeList<float3> vertices,
-    NativeList<int> triangles,
-    NativeList<float3> normals,
-    NativeList<float2> uvs)
+    public void Apply(PendingMesh pending)
     {
-        handle.Complete();
+        // pending.Handle.Complete();
 
-        // Check if it exists, otherwise SharedVertices may not be null and try to work with a null _pendingMeshData.
-        // Remember entities can be destroyed within RegenerateAllChunks in ChunkGenerationSystem
-        if (!EntityManager.Exists(entity) || vertices.Length == 0)
+        // Check if it entity exists, otherwise vertices may try to work with a null one. They could've been destroyed in ChunkGenerationSystem > RegenerateAllChunks
+        if (!EntityManager.Exists(pending.Entity) || pending.Vertices.Length == 0)
             return;
 
         Mesh mesh;
 
         mesh = new Mesh();
-        mesh.name = $"ChunkMesh_{entity.Index}";
-        mesh.SetVertices(vertices.AsArray());
-        mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
-        mesh.SetNormals(normals.AsArray());
-        mesh.SetUVs(0, uvs.AsArray());
+        mesh.name = $"ChunkMesh_{pending.Entity.Index}";
+        mesh.SetVertices(pending.Vertices.AsArray());
+        mesh.SetTriangles(pending.Triangles.AsArray().ToArray(), 0);
+        mesh.SetNormals(pending.Normals.AsArray());
+        mesh.SetUVs(0, pending.UVs.AsArray());
         mesh.RecalculateBounds();
 
         var desc = new RenderMeshDescription(
@@ -76,7 +69,7 @@ public partial class ChunkMeshApplySystem : SystemBase
         );
 
         RenderMeshUtility.AddComponents(
-            entity,
+            pending.Entity,
             EntityManager,
             desc,
             renderMeshArray,
@@ -85,17 +78,17 @@ public partial class ChunkMeshApplySystem : SystemBase
 
         using (CreateColliderMarker.Auto())
         {
-            var trianglesInt3 = new NativeArray<int3>(triangles.Length / 3, Allocator.Temp);
+            var trianglesInt3 = new NativeArray<int3>(pending.Triangles.Length / 3, Allocator.Temp);
 
             for (int i = 0; i < trianglesInt3.Length; i++)
             {
                 trianglesInt3[i] = new int3(
-                    triangles[i * 3],
-                    triangles[i * 3 + 1],
-                    triangles[i * 3 + 2]);
+                    pending.Triangles[i * 3],
+                    pending.Triangles[i * 3 + 1],
+                    pending.Triangles[i * 3 + 2]);
             }
 
-            var collider = Unity.Physics.MeshCollider.Create(vertices.AsArray(), trianglesInt3);
+            var collider = Unity.Physics.MeshCollider.Create(pending.Vertices.AsArray(), trianglesInt3);
 
             trianglesInt3.Dispose();
 
@@ -104,21 +97,21 @@ public partial class ChunkMeshApplySystem : SystemBase
                 Value = collider
             };
 
-            if (EntityManager.HasComponent<PhysicsCollider>(entity))
-                EntityManager.SetComponentData(entity, physicsCollider);
+            if (EntityManager.HasComponent<PhysicsCollider>(pending.Entity))
+                EntityManager.SetComponentData(pending.Entity, physicsCollider);
             else
-                EntityManager.AddComponentData(entity, physicsCollider);
+                EntityManager.AddComponentData(pending.Entity, physicsCollider);
         }
 
         // If LocalTransform already exists, refresh it to ensure correct render
-        if (EntityManager.HasComponent<LocalTransform>(entity))
+        if (EntityManager.HasComponent<LocalTransform>(pending.Entity))
         {
-            var transform = EntityManager.GetComponentData<LocalTransform>(entity);
-            EntityManager.SetComponentData(entity, transform);
+            var transform = EntityManager.GetComponentData<LocalTransform>(pending.Entity);
+            EntityManager.SetComponentData(pending.Entity, transform);
         }
 
         var ecb = new EntityCommandBuffer(Allocator.Temp);
-        ecb.SetName(entity, $"ChunkMesh_{entity.Index}");
+        ecb.SetName(pending.Entity, $"ChunkMesh_{pending.Entity.Index}");
         ecb.Playback(EntityManager);
         ecb.Dispose();
     }

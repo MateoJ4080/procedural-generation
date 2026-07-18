@@ -1,13 +1,16 @@
+using System.Buffers;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 [BurstCompile]
 public struct AddFacesJob : IJob
 {
-    [ReadOnly] public NativeArray<Block> BufferAsArray; // DynamicBuffer can't be used in jobs; NativeArray provides native blittable memory (needed by the Job System)
+    public NativeArray<Block> BufferAsArray; // DynamicBuffer can't be used in jobs; NativeArray provides native blittable memory (needed by the Job System)
     public int Width;
     public int Height;
     public int Depth;
@@ -23,30 +26,38 @@ public struct AddFacesJob : IJob
     public NativeList<int> Triangles;
     public NativeList<float3> Normals;
 
+    private static readonly ProfilerMarker ExecuteMarker = new("AddFacesJob Execute");
+
     public void Execute()
     {
-        for (int x = 0; x < Width; x++)
+        using (ExecuteMarker.Auto())
         {
-            for (int y = 0; y < Height; y++)
+
+            for (int x = 0; x < Width; x++)
             {
-                for (int z = 0; z < Depth; z++)
+                for (int y = 0; y < Height; y++)
                 {
-                    int bufferIndex = x + y * Width + z * Width * Height;
-                    var block = BufferAsArray[bufferIndex];
+                    for (int z = 0; z < Depth; z++)
+                    {
+                        int bufferIndex = x + y * Width + z * Width * Height;
+                        var block = BufferAsArray[bufferIndex];
 
-                    if (block.Type == 0) continue;
+                        if (block.Type == 0) continue;
 
-                    bool right = IsAir(x + 1, y, z);
-                    bool left = IsAir(x - 1, y, z);
-                    bool top = IsAir(x, y + 1, z);
-                    bool bottom = IsAir(x, y - 1, z);
-                    bool front = IsAir(x, y, z + 1);
-                    bool back = IsAir(x, y, z - 1);
+                        bool right = IsAir(x + 1, y, z);
+                        bool left = IsAir(x - 1, y, z);
+                        bool top = IsAir(x, y + 1, z);
+                        bool bottom = IsAir(x, y - 1, z);
+                        bool front = IsAir(x, y, z + 1);
+                        bool back = IsAir(x, y, z - 1);
 
-                    AddVisibleFaces(new int3(x, y, z), right, left, top, bottom, front, back);
+                        AddVisibleFaces(new int3(x, y, z), right, left, top, bottom, front, back);
+                    }
                 }
             }
         }
+
+
     }
 
     bool IsAir(int x, int y, int z)

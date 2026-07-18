@@ -4,65 +4,32 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Jobs;
 using Unity.Transforms;
+using Unity.Profiling;
 
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
 public partial class ChunkMeshSystem : SystemBase
 {
-    // "Shared" as with other scripts
-    private NativeList<float3> vertices;
-    private NativeList<float2> uvs;
-    private NativeList<int> triangles;
-    private NativeList<float3> normals;
 
-    private NativeArray<Block> _emptyBlockArrayL; // Left
-    private NativeArray<Block> _emptyBlockArrayR; // Right
-    private NativeArray<Block> _emptyBlockArrayB; // Back
-    private NativeArray<Block> _emptyBlockArrayF; // Front
+    private static readonly ProfilerMarker ApplyMeshMarker = new("ChunkMesh.ApplyMesh");
 
     private DynamicBuffer<Block> _leftChunkBuffer;
     private DynamicBuffer<Block> _rightChunkBuffer;
     private DynamicBuffer<Block> _backChunkBuffer;
     private DynamicBuffer<Block> _frontChunkBuffer;
-
-    private NativeArray<Block> _leftArr;
-    private NativeArray<Block> _rightArr;
-    private NativeArray<Block> _backArr;
-    private NativeArray<Block> _frontArr;
+    private NativeList<PendingMesh> _pendingMeshes;
 
     private struct MeshTask
     {
         public Entity Entity;
         public int Priority;
     }
-    /// <summary>
-    /// Indicates if there's a job running from the previous frame
-    /// </summary>
-    private bool _hasPendingJob;
-    /// <summary>
-    /// Reference to the running job to call Complete() on it
-    /// </summary>
-    private JobHandle _pendingJobHandle;
-    /// <summary>
-    /// The current entity being worked on
-    /// </summary>
-    private Entity _pendingEntity;
 
     private Entity _globalChunkDataEntity;
 
     protected override void OnCreate()
     {
-        vertices = new NativeList<float3>(Allocator.Persistent);
-        uvs = new NativeList<float2>(Allocator.Persistent);
-        triangles = new NativeList<int>(Allocator.Persistent);
-        normals = new NativeList<float3>(Allocator.Persistent);
-
-        _emptyBlockArrayL = new NativeArray<Block>(0, Allocator.Persistent);
-        _emptyBlockArrayR = new NativeArray<Block>(0, Allocator.Persistent);
-        _emptyBlockArrayB = new NativeArray<Block>(0, Allocator.Persistent);
-        _emptyBlockArrayF = new NativeArray<Block>(0, Allocator.Persistent);
-
-        _hasPendingJob = false;
+        _pendingMeshes = new NativeList<PendingMesh>(Allocator.Persistent);
 
         _globalChunkDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
     }
@@ -70,34 +37,47 @@ public partial class ChunkMeshSystem : SystemBase
     protected override void OnUpdate()
     {
         CompletePendingMesh();
-        DisposeNeighborArrays();
         ScheduleNextJob();
     }
 
     private void CompletePendingMesh()
     {
-        if (_hasPendingJob)
-        {
-            var applySystem = World.GetExistingSystemManaged<ChunkMeshApplySystem>();
-            applySystem.Apply(
-                _pendingEntity,
-                _pendingJobHandle,
-                vertices,
-                triangles,
-                normals,
-                uvs
-            );
+        var applySystem = World.GetExistingSystemManaged<ChunkMeshApplySystem>();
 
-            _hasPendingJob = false;
+        // Loop is backwards so it doesn't miss a switched element after RemoveAtSwapBack
+        for (int i = _pendingMeshes.Length - 1; i >= 0; i--)
+        {
+            var pending = _pendingMeshes[i];
+
+            if (!pending.Handle.IsCompleted)
+                continue;
+
+            pending.Handle.Complete();
+
+            ApplyMeshMarker.Begin();
+
+            applySystem.Apply(pending);
+
+            ApplyMeshMarker.End();
+            DisposeMeshData(pending);
+
+            _pendingMeshes.RemoveAtSwapBack(i);
         }
     }
 
-    private void DisposeNeighborArrays()
+    private void DisposeMeshData(PendingMesh pending)
     {
-        if (_leftArr.IsCreated && _leftArr != _emptyBlockArrayL) _leftArr.Dispose();
-        if (_rightArr.IsCreated && _rightArr != _emptyBlockArrayR) _rightArr.Dispose();
-        if (_backArr.IsCreated && _backArr != _emptyBlockArrayB) _backArr.Dispose();
-        if (_frontArr.IsCreated && _frontArr != _emptyBlockArrayF) _frontArr.Dispose();
+        pending.Blocks.Dispose();
+
+        pending.Vertices.Dispose();
+        pending.UVs.Dispose();
+        pending.Triangles.Dispose();
+        pending.Normals.Dispose();
+
+        if (pending.LeftArray.IsCreated) pending.LeftArray.Dispose();
+        if (pending.RightArray.IsCreated) pending.RightArray.Dispose();
+        if (pending.FrontArray.IsCreated) pending.FrontArray.Dispose();
+        if (pending.BackArray.IsCreated) pending.BackArray.Dispose();
     }
 
     private void ScheduleNextJob()
@@ -127,80 +107,100 @@ public partial class ChunkMeshSystem : SystemBase
 
         tasks.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
-        if (tasks.Count > 0)
+        int maxJobs = 2; // To-do: Try to raise after optimizations
+        int jobsToSchedule = math.min(maxJobs, tasks.Count);
+
+        for (int i = 0; i < jobsToSchedule; i++)
         {
-            Entity entity = tasks[0].Entity;
-
-            var chunk = SystemAPI.GetComponent<Chunk>(entity);
-            var buffer = SystemAPI.GetBuffer<Block>(entity);
-
-            var width = chunk.Width;
-            var height = chunk.Height;
-            var depth = chunk.Depth;
-
-            normals.Clear();
-            uvs.Clear();
-            triangles.Clear();
-            vertices.Clear();
-
-            // Assign default value so in next iterations it doesn't give an incorrect value
-            _leftChunkBuffer = default;
-            _rightChunkBuffer = default;
-            _backChunkBuffer = default;
-            _frontChunkBuffer = default;
-
-            NativeHashMap<int2, Entity> chunksMap = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity).Chunks;
-            int2 chunkPos = SystemAPI.GetComponent<ChunkData>(entity).ChunkCoord;
-            chunksMap.TryAdd(chunkPos, entity);
-
-            if (chunksMap.TryGetValue(chunkPos + new int2(-1, 0), out var leftChunk))
-                _leftChunkBuffer = SystemAPI.GetBuffer<Block>(leftChunk);
-            if (chunksMap.TryGetValue(chunkPos + new int2(1, 0), out var rightChunk))
-                _rightChunkBuffer = SystemAPI.GetBuffer<Block>(rightChunk);
-            if (chunksMap.TryGetValue(chunkPos + new int2(0, -1), out var backChunk))
-                _backChunkBuffer = SystemAPI.GetBuffer<Block>(backChunk);
-            if (chunksMap.TryGetValue(chunkPos + new int2(0, 1), out var frontChunk))
-                _frontChunkBuffer = SystemAPI.GetBuffer<Block>(frontChunk);
-
-            _leftArr = ToNativeArray(_leftChunkBuffer, _emptyBlockArrayL);
-            _rightArr = ToNativeArray(_rightChunkBuffer, _emptyBlockArrayR);
-            _backArr = ToNativeArray(_backChunkBuffer, _emptyBlockArrayB);
-            _frontArr = ToNativeArray(_frontChunkBuffer, _emptyBlockArrayF);
-
-            var addFacesJob = new AddFacesJob
-            {
-                BufferAsArray = buffer.AsNativeArray(),
-
-                LeftArray = _leftArr,
-                RightArray = _rightArr,
-                BackArray = _backArr,
-                FrontArray = _frontArr,
-
-                Width = width,
-                Height = height,
-                Depth = depth,
-
-                Vertices = vertices,
-                UVs = uvs,
-                Triangles = triangles,
-                Normals = normals
-            };
-
-            _pendingJobHandle = addFacesJob.Schedule();
-
-            // Makes sure to wait for the faces before creating the mesh right in the next line
-            Dependency = _pendingJobHandle;
-
-            _pendingEntity = entity;
-
-            _hasPendingJob = true;
+            ScheduleMeshJob(tasks[i].Entity);
         }
     }
 
-    private NativeArray<Block> ToNativeArray(DynamicBuffer<Block> buffer, NativeArray<Block> emptyArray)
+    private void ScheduleMeshJob(Entity entity)
+    {
+        var chunk = SystemAPI.GetComponent<Chunk>(entity);
+
+        var buffer = SystemAPI.GetBuffer<Block>(entity);
+        var blocksCopy = new NativeArray<Block>(buffer.Length, Allocator.TempJob);
+        blocksCopy.CopyFrom(buffer.AsNativeArray());
+
+        var width = chunk.Width;
+        var height = chunk.Height;
+        var depth = chunk.Depth;
+
+        // Assign default value so in next iterations it doesn't give an incorrect one
+        _leftChunkBuffer = default;
+        _rightChunkBuffer = default;
+        _backChunkBuffer = default;
+        _frontChunkBuffer = default;
+
+        NativeHashMap<int2, Entity> chunksMap = SystemAPI.GetComponent<ChunksGlobalData>(_globalChunkDataEntity).Chunks;
+        int2 chunkPos = SystemAPI.GetComponent<ChunkData>(entity).ChunkCoord;
+        chunksMap.TryAdd(chunkPos, entity);
+
+        if (chunksMap.TryGetValue(chunkPos + new int2(-1, 0), out var leftChunk))
+            _leftChunkBuffer = SystemAPI.GetBuffer<Block>(leftChunk);
+        if (chunksMap.TryGetValue(chunkPos + new int2(1, 0), out var rightChunk))
+            _rightChunkBuffer = SystemAPI.GetBuffer<Block>(rightChunk);
+        if (chunksMap.TryGetValue(chunkPos + new int2(0, -1), out var backChunk))
+            _backChunkBuffer = SystemAPI.GetBuffer<Block>(backChunk);
+        if (chunksMap.TryGetValue(chunkPos + new int2(0, 1), out var frontChunk))
+            _frontChunkBuffer = SystemAPI.GetBuffer<Block>(frontChunk);
+
+        NativeArray<Block> _leftArr = ToNativeArray(_leftChunkBuffer);
+        NativeArray<Block> _rightArr = ToNativeArray(_rightChunkBuffer);
+        NativeArray<Block> _backArr = ToNativeArray(_backChunkBuffer);
+        NativeArray<Block> _frontArr = ToNativeArray(_frontChunkBuffer);
+
+        var vertices = new NativeList<float3>(Allocator.TempJob);
+        var uvs = new NativeList<float2>(Allocator.TempJob);
+        var triangles = new NativeList<int>(Allocator.TempJob);
+        var normals = new NativeList<float3>(Allocator.TempJob);
+
+        var addFacesJob = new AddFacesJob
+        {
+            BufferAsArray = blocksCopy,
+
+            LeftArray = _leftArr,
+            RightArray = _rightArr,
+            BackArray = _backArr,
+            FrontArray = _frontArr,
+
+            Width = width,
+            Height = height,
+            Depth = depth,
+
+            Vertices = vertices,
+            UVs = uvs,
+            Triangles = triangles,
+            Normals = normals
+        };
+
+        var jobHandle = addFacesJob.Schedule();
+
+        _pendingMeshes.Add(new PendingMesh
+        {
+            Entity = entity,
+            Handle = jobHandle,
+
+            Blocks = blocksCopy,
+
+            Vertices = vertices,
+            UVs = uvs,
+            Triangles = triangles,
+            Normals = normals,
+
+            LeftArray = _leftArr,
+            RightArray = _rightArr,
+            BackArray = _backArr,
+            FrontArray = _frontArr,
+        });
+    }
+
+    private NativeArray<Block> ToNativeArray(DynamicBuffer<Block> buffer)
     {
         if (!buffer.IsCreated)
-            return emptyArray;
+            return new NativeArray<Block>(0, Allocator.TempJob);
 
         var array = new NativeArray<Block>(buffer.Length, Allocator.TempJob);
         array.CopyFrom(buffer.AsNativeArray());
@@ -209,19 +209,7 @@ public partial class ChunkMeshSystem : SystemBase
 
     protected override void OnDestroy()
     {
-        if (_hasPendingJob)
-        {
-            _pendingJobHandle.Complete();
-        }
-
-        if (vertices.IsCreated) vertices.Dispose();
-        if (uvs.IsCreated) uvs.Dispose();
-        if (triangles.IsCreated) triangles.Dispose();
-        if (normals.IsCreated) normals.Dispose();
-
-        if (_emptyBlockArrayL.IsCreated) _emptyBlockArrayL.Dispose();
-        if (_emptyBlockArrayR.IsCreated) _emptyBlockArrayR.Dispose();
-        if (_emptyBlockArrayB.IsCreated) _emptyBlockArrayB.Dispose();
-        if (_emptyBlockArrayF.IsCreated) _emptyBlockArrayF.Dispose();
+        if (_pendingMeshes.IsCreated) _pendingMeshes.Dispose();
     }
 }
+
