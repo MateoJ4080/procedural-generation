@@ -157,7 +157,7 @@ public partial class ChunkMeshSystem : SystemBase
         var triangles = new NativeList<int>(Allocator.TempJob);
         var normals = new NativeList<float3>(Allocator.TempJob);
 
-        var addFacesJob = new AddFacesJob
+        var meshDataJob = new GenerateMeshDataJob
         {
             BufferAsArray = blocksCopy,
 
@@ -176,7 +176,7 @@ public partial class ChunkMeshSystem : SystemBase
             Normals = normals
         };
 
-        var jobHandle = addFacesJob.Schedule();
+        var jobHandle = meshDataJob.Schedule();
 
         _pendingMeshes.Add(new PendingMesh
         {

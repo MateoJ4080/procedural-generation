@@ -1,14 +1,11 @@
-using System.Buffers;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
-using UnityEngine;
-using UnityEngine.Profiling;
 
 [BurstCompile]
-public struct AddFacesJob : IJob
+public struct GenerateMeshDataJob : IJob
 {
     public NativeArray<Block> BufferAsArray; // DynamicBuffer can't be used in jobs; NativeArray provides native blittable memory (needed by the Job System)
     public int Width;
