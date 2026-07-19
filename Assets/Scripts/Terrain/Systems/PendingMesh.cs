@@ -19,4 +19,21 @@ public struct PendingMesh
     public NativeArray<Block> RightArray;
     public NativeArray<Block> BackArray;
     public NativeArray<Block> FrontArray;
+
+    public readonly void Dispose()
+    {
+        Blocks.Dispose();
+
+        Vertices.Dispose();
+        UVs.Dispose();
+        Triangles.Dispose();
+        Normals.Dispose();
+
+        if (LeftArray.IsCreated) LeftArray.Dispose();
+        if (RightArray.IsCreated) RightArray.Dispose();
+        if (FrontArray.IsCreated) FrontArray.Dispose();
+        if (BackArray.IsCreated) BackArray.Dispose();
+    }
 }
+
+

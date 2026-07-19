@@ -54,30 +54,10 @@ public partial class ChunkMeshSystem : SystemBase
 
             pending.Handle.Complete();
 
-            ApplyMeshMarker.Begin();
-
             applySystem.Apply(pending);
-
-            ApplyMeshMarker.End();
-            DisposeMeshData(pending);
 
             _pendingMeshes.RemoveAtSwapBack(i);
         }
-    }
-
-    private void DisposeMeshData(PendingMesh pending)
-    {
-        pending.Blocks.Dispose();
-
-        pending.Vertices.Dispose();
-        pending.UVs.Dispose();
-        pending.Triangles.Dispose();
-        pending.Normals.Dispose();
-
-        if (pending.LeftArray.IsCreated) pending.LeftArray.Dispose();
-        if (pending.RightArray.IsCreated) pending.RightArray.Dispose();
-        if (pending.FrontArray.IsCreated) pending.FrontArray.Dispose();
-        if (pending.BackArray.IsCreated) pending.BackArray.Dispose();
     }
 
     private void ScheduleNextJob()
