@@ -43,17 +43,16 @@ public partial class ChunkMeshSystem : SystemBase
     private void CompletePendingMesh()
     {
         var applySystem = World.GetExistingSystemManaged<ChunkMeshApplySystem>();
+        var colliderSystem = World.GetExistingSystemManaged<ChunkColliderSystem>();
 
         // Loop is backwards so it doesn't miss a switched element after RemoveAtSwapBack
         for (int i = _pendingMeshes.Length - 1; i >= 0; i--)
         {
             var pending = _pendingMeshes[i];
+            if (!pending.Handle.IsCompleted) continue;
+            else pending.Handle.Complete();
 
-            if (!pending.Handle.IsCompleted)
-                continue;
-
-            pending.Handle.Complete();
-
+            colliderSystem.Enqueue(pending);
             applySystem.Apply(pending);
 
             _pendingMeshes.RemoveAtSwapBack(i);
