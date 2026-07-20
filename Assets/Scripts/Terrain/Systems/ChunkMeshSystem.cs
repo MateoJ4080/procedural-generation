@@ -5,14 +5,12 @@ using Unity.Rendering;
 using Unity.Jobs;
 using Unity.Transforms;
 using Unity.Profiling;
+using Unity.Physics;
 
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
 public partial class ChunkMeshSystem : SystemBase
 {
-
-    private static readonly ProfilerMarker ApplyMeshMarker = new("ChunkMesh.ApplyMesh");
-
     private DynamicBuffer<Block> _leftChunkBuffer;
     private DynamicBuffer<Block> _rightChunkBuffer;
     private DynamicBuffer<Block> _backChunkBuffer;
@@ -131,28 +129,34 @@ public partial class ChunkMeshSystem : SystemBase
         NativeArray<Block> _backArr = ToNativeArray(_backChunkBuffer);
         NativeArray<Block> _frontArr = ToNativeArray(_frontChunkBuffer);
 
-        var vertices = new NativeList<float3>(Allocator.TempJob);
-        var uvs = new NativeList<float2>(Allocator.TempJob);
-        var triangles = new NativeList<int>(Allocator.TempJob);
-        var normals = new NativeList<float3>(Allocator.TempJob);
+        var renderVertices = new NativeList<float3>(Allocator.TempJob);
+        var renderUVs = new NativeList<float2>(Allocator.TempJob);
+        var renderTriangles = new NativeList<int>(Allocator.TempJob);
+        var renderNormals = new NativeList<float3>(Allocator.TempJob);
+
+        var colliderVertices = new NativeList<float3>(Allocator.TempJob);
+        var colliderTriangles = new NativeList<int>(Allocator.TempJob);
 
         var meshDataJob = new GenerateMeshDataJob
         {
             BufferAsArray = blocksCopy,
 
-            LeftArray = _leftArr,
-            RightArray = _rightArr,
-            BackArray = _backArr,
-            FrontArray = _frontArr,
-
             Width = width,
             Height = height,
             Depth = depth,
 
-            Vertices = vertices,
-            UVs = uvs,
-            Triangles = triangles,
-            Normals = normals
+            RenderVertices = renderVertices,
+            RenderUVs = renderUVs,
+            RenderTriangles = renderTriangles,
+            RenderNormals = renderNormals,
+
+            ColliderVertices = colliderVertices,
+            ColliderTriangles = colliderTriangles,
+
+            LeftArray = _leftArr,
+            RightArray = _rightArr,
+            BackArray = _backArr,
+            FrontArray = _frontArr,
         };
 
         var jobHandle = meshDataJob.Schedule();
@@ -164,10 +168,13 @@ public partial class ChunkMeshSystem : SystemBase
 
             Blocks = blocksCopy,
 
-            Vertices = vertices,
-            UVs = uvs,
-            Triangles = triangles,
-            Normals = normals,
+            RenderVertices = renderVertices,
+            RenderUVs = renderUVs,
+            RenderTriangles = renderTriangles,
+            RenderNormals = renderNormals,
+
+            ColliderVertices = colliderVertices,
+            ColliderTriangles = colliderTriangles,
 
             LeftArray = _leftArr,
             RightArray = _rightArr,

@@ -1,8 +1,6 @@
 using Unity.Entities;
-using UnityEngine;
 using Unity.Collections;
 using Unity.Mathematics;
-using Unity.Transforms;
 using Unity.Physics;
 using System.Collections.Generic;
 using Unity.Profiling;
@@ -24,20 +22,17 @@ public partial class ChunkColliderSystem : SystemBase
             {
                 using (CreateColliderMarker.Auto())
                 {
-                    var trianglesInt3 = new NativeArray<int3>(pending.Triangles.Length / 3, Allocator.Temp);
+                    var trianglesInt3 = new NativeArray<int3>(pending.ColliderTriangles.Length / 3, Allocator.Temp);
 
                     for (int i = 0; i < trianglesInt3.Length; i++)
                     {
                         trianglesInt3[i] = new int3(
-                            pending.Triangles[i * 3],
-                            pending.Triangles[i * 3 + 1],
-                            pending.Triangles[i * 3 + 2]);
+                            pending.ColliderTriangles[i * 3],
+                            pending.ColliderTriangles[i * 3 + 1],
+                            pending.ColliderTriangles[i * 3 + 2]);
                     }
 
-                    var collider = Unity.Physics.MeshCollider.Create(
-                        pending.Vertices.AsArray(),
-                        trianglesInt3
-                    );
+                    var collider = Unity.Physics.MeshCollider.Create(pending.ColliderVertices.AsArray(), trianglesInt3);
 
                     trianglesInt3.Dispose();
 
@@ -53,8 +48,8 @@ public partial class ChunkColliderSystem : SystemBase
 
                     pending.Dispose();
 
-                    var transform = SystemAPI.GetComponent<LocalTransform>(pending.Entity);
-                    Debug.Log($"Collider generated for {transform.Position}");
+                    // var transform = SystemAPI.GetComponent<LocalTransform>(pending.Entity);
+                    // Debug.Log($"Collider generated for {transform.Position}");
                 }
             }
         }

@@ -44,17 +44,17 @@ public partial class ChunkMeshApplySystem : SystemBase
     public void Apply(PendingMesh pending)
     {
         // Check if it entity exists, otherwise vertices may try to work with a null one. They could've been destroyed in ChunkGenerationSystem > RegenerateAllChunks
-        if (!EntityManager.Exists(pending.Entity) || pending.Vertices.Length == 0)
+        if (!EntityManager.Exists(pending.Entity) || pending.RenderVertices.Length == 0)
             return;
 
         Mesh mesh;
 
         mesh = new Mesh();
         mesh.name = $"ChunkMesh_{pending.Entity.Index}";
-        mesh.SetVertices(pending.Vertices.AsArray());
-        mesh.SetTriangles(pending.Triangles.AsArray().ToArray(), 0);
-        mesh.SetNormals(pending.Normals.AsArray());
-        mesh.SetUVs(0, pending.UVs.AsArray());
+        mesh.SetVertices(pending.RenderVertices.AsArray());
+        mesh.SetTriangles(pending.RenderTriangles.AsArray().ToArray(), 0);
+        mesh.SetNormals(pending.RenderNormals.AsArray());
+        mesh.SetUVs(0, pending.RenderUVs.AsArray());
         mesh.RecalculateBounds();
 
         var desc = new RenderMeshDescription(
