@@ -9,6 +9,8 @@ public partial struct ChunkGenerationSystem : ISystem
 {
     private TerrainConfig _lastConfig;
     private NativeHashMap<int2, Entity> _chunks;
+    private int2 _lastPlayerChunk;
+    private bool _hasLastPlayerChunk;
 
     public void OnCreate(ref SystemState state)
     {
@@ -42,6 +44,13 @@ public partial struct ChunkGenerationSystem : ISystem
         float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
 
         int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
+
+        if (_hasLastPlayerChunk && playerChunk.Equals(_lastPlayerChunk))
+            return;
+
+        _lastPlayerChunk = playerChunk;
+        _hasLastPlayerChunk = true;
+
         int loadRadius = 7;
 
         // Load new chunks based on player position
