@@ -7,6 +7,7 @@ using Unity.Profiling;
 [BurstCompile]
 public struct GenerateMeshDataJob : IJob
 {
+    public int2 ChunkPos;
     public NativeArray<Block> BufferAsArray; // DynamicBuffer can't be used in jobs; NativeArray provides native blittable memory (needed by the Job System)
     public int Width;
     public int Height;
@@ -34,7 +35,6 @@ public struct GenerateMeshDataJob : IJob
     {
         using (ExecuteMarker.Auto())
         {
-
             for (int x = 0; x < Width; x++)
             {
                 for (int y = 0; y < Height; y++)
@@ -179,14 +179,17 @@ public struct GenerateMeshDataJob : IJob
         AddNormals(new float3(0, 0, 1));
 
         // Collider
-        int colliderStart = ColliderVertices.Length;
+        if (FrontArray.Length != 0)
+        {
+            int colliderStart = ColliderVertices.Length;
 
-        ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-        ColliderVertices.Add(pos + new float3(1, 0, 1)); // Top left
-        ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-        ColliderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
+            ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
+            ColliderVertices.Add(pos + new float3(1, 0, 1)); // Top left
+            ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
+            ColliderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
 
-        AddColliderQuad(colliderStart);
+            AddColliderQuad(colliderStart);
+        }
     }
 
     private void AddBackFace(int3 pos)
@@ -209,14 +212,17 @@ public struct GenerateMeshDataJob : IJob
         AddNormals(new float3(0, 0, -1));
 
         // Collider
-        int colliderStart = ColliderVertices.Length;
+        if (BackArray.Length != 0)
+        {
+            int colliderStart = ColliderVertices.Length;
 
-        ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-        ColliderVertices.Add(pos + new float3(0, 0, 0)); // Top left
-        ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-        ColliderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+            ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
+            ColliderVertices.Add(pos + new float3(0, 0, 0)); // Top left
+            ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
+            ColliderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
 
-        AddColliderQuad(colliderStart);
+            AddColliderQuad(colliderStart);
+        }
     }
 
     private void AddRightFace(int3 pos)
@@ -239,14 +245,18 @@ public struct GenerateMeshDataJob : IJob
         AddNormals(new float3(1, 0, 0));
 
         // Collider
-        int colliderStart = ColliderVertices.Length;
 
-        ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-        ColliderVertices.Add(pos + new float3(1, 1, 0)); // Top left
-        ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-        ColliderVertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+        if (RightArray.Length != 0)
+        {
+            int colliderStart = ColliderVertices.Length;
 
-        AddColliderQuad(colliderStart);
+            ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
+            ColliderVertices.Add(pos + new float3(1, 1, 0)); // Top left
+            ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
+            ColliderVertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+
+            AddColliderQuad(colliderStart);
+        }
     }
 
     private void AddLeftFace(int3 pos)
@@ -269,14 +279,17 @@ public struct GenerateMeshDataJob : IJob
         AddNormals(new float3(-1, 0, 0));
 
         // Collider
-        int colliderStart = ColliderVertices.Length;
+        if (LeftArray.Length != 0)
+        {
+            int colliderStart = ColliderVertices.Length;
 
-        ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-        ColliderVertices.Add(pos + new float3(0, 1, 1)); // Top left
-        ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-        ColliderVertices.Add(pos + new float3(0, 0, 0)); // Bottom right
+            ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
+            ColliderVertices.Add(pos + new float3(0, 1, 1)); // Top left
+            ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
+            ColliderVertices.Add(pos + new float3(0, 0, 0)); // Bottom right
 
-        AddColliderQuad(colliderStart);
+            AddColliderQuad(colliderStart);
+        }
     }
 
     private void AddQuad(int start)

@@ -3,7 +3,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Physics;
-using Unity.Profiling;
 using Unity.Transforms;
 
 public partial struct ChunkGenerationSystem : ISystem

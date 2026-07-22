@@ -4,7 +4,6 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Jobs;
 using Unity.Transforms;
-using Unity.Profiling;
 using Unity.Physics;
 
 // UpdateAfter to wait for the chunk data
@@ -139,6 +138,7 @@ public partial class ChunkMeshSystem : SystemBase
 
         var meshDataJob = new GenerateMeshDataJob
         {
+            ChunkPos = chunkPos,
             BufferAsArray = blocksCopy,
 
             Width = width,

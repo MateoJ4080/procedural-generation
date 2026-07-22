@@ -3,18 +3,12 @@ using UnityEngine;
 using Unity.Rendering;
 using UnityEngine.Rendering;
 using Unity.Collections;
-using Unity.Jobs;
-using Unity.Mathematics;
 using Unity.Transforms;
-using Unity.Physics;
-using Unity.Profiling;
 using System.Collections.Generic;
 
 public partial class ChunkMeshApplySystem : SystemBase
 {
     private UnityEngine.Material _sharedMaterial;
-
-    private Queue<PendingMesh> _colliderQueue = new();
 
     protected override void OnCreate()
     {
