@@ -29,7 +29,7 @@ public partial struct ChunkGenerationSystem : ISystem
         {
             if (!terrainConfig.Equals(_lastConfig))
             {
-                RegenerateAllChunks(ref state, terrainConfig);
+                RegenerateAllChunks(ref state);
                 _lastConfig = terrainConfig;
             }
         }
@@ -43,9 +43,9 @@ public partial struct ChunkGenerationSystem : ISystem
         Entity player = SystemAPI.GetSingletonEntity<PlayerTag>();
         float3 playerPos = SystemAPI.GetComponent<LocalTransform>(player).Position;
 
-        int2 playerChunk = new int2((int)(playerPos.x / 16), (int)(playerPos.z / 16));
+        int2 playerChunk = new((int)(playerPos.x / 16), (int)(playerPos.z / 16));
 
-        if (_hasLastPlayerChunk && playerChunk.Equals(_lastPlayerChunk))
+        if (_hasLastPlayerChunk && playerChunk.Equals(_lastPlayerChunk) && !terrainConfig.Equals(_lastConfig))
             return;
 
         _lastPlayerChunk = playerChunk;
@@ -144,7 +144,7 @@ public partial struct ChunkGenerationSystem : ISystem
     }
 
     // Clear chunks list if TerrainConfig is updated, allowing new generation in the OnUpdate
-    private void RegenerateAllChunks(ref SystemState state, TerrainConfig config)
+    private void RegenerateAllChunks(ref SystemState state)
     {
         foreach (var entity in _loadedChunks.GetValueArray(Allocator.Temp))
         {
