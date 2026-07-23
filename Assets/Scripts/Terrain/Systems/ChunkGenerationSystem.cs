@@ -95,7 +95,7 @@ public partial struct ChunkGenerationSystem : ISystem
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
                     state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _loadedChunks });
 
-                    RegenerateAdjacentChunks(entity, chunkCoord, ref state);
+                    RegenerateAdjacentChunks(chunkCoord, ref state);
                 }
             }
         }
@@ -109,6 +109,8 @@ public partial struct ChunkGenerationSystem : ISystem
 
         foreach (var chunkCoord in chunksToUnload)
         {
+            RegenerateAdjacentChunks(chunkCoord, ref state);
+
             state.EntityManager.DestroyEntity(_loadedChunks[chunkCoord]);
             _loadedChunks.Remove(chunkCoord);
         }
@@ -117,37 +119,22 @@ public partial struct ChunkGenerationSystem : ISystem
     }
 
     // To do: regenerate only the specific adjacent face instead of the whole chunk
-    public void RegenerateAdjacentChunks(Entity chunkEntity, int2 chunkCoord, ref SystemState state)
+    private void RegenerateAdjacentChunks(int2 chunkCoord, ref SystemState state)
     {
-        var chunkData = SystemAPI.GetComponent<ChunkData>(chunkEntity);
+        RefreshChunk(chunkCoord + new int2(-1, 0), ref state);
+        RefreshChunk(chunkCoord + new int2(1, 0), ref state);
+        RefreshChunk(chunkCoord + new int2(0, -1), ref state);
+        RefreshChunk(chunkCoord + new int2(0, 1), ref state);
+    }
 
-        if (!chunkData.IsRefreshing)
-        {
-            if (_loadedChunks.TryGetValue(chunkCoord + new int2(-1, 0), out Entity leftChunk))
-            {
-                var leftChunkData = SystemAPI.GetComponent<ChunkData>(leftChunk);
-                leftChunkData.IsRefreshing = true;
-                state.EntityManager.SetComponentData(leftChunk, leftChunkData);
-            }
-            if (_loadedChunks.TryGetValue(chunkCoord + new int2(1, 0), out Entity rightChunk))
-            {
-                var rightChunkData = SystemAPI.GetComponent<ChunkData>(rightChunk);
-                rightChunkData.IsRefreshing = true;
-                state.EntityManager.SetComponentData(rightChunk, rightChunkData);
-            }
-            if (_loadedChunks.TryGetValue(chunkCoord + new int2(0, -1), out Entity backChunk))
-            {
-                var backChunkData = SystemAPI.GetComponent<ChunkData>(backChunk);
-                backChunkData.IsRefreshing = true;
-                state.EntityManager.SetComponentData(backChunk, backChunkData);
-            }
-            if (_loadedChunks.TryGetValue(chunkCoord + new int2(0, 1), out Entity frontChunk))
-            {
-                var frontChunkData = SystemAPI.GetComponent<ChunkData>(frontChunk);
-                frontChunkData.IsRefreshing = true;
-                state.EntityManager.SetComponentData(frontChunk, frontChunkData);
-            }
-        }
+    private void RefreshChunk(int2 chunkCoord, ref SystemState state)
+    {
+        if (!_loadedChunks.TryGetValue(chunkCoord, out Entity chunk))
+            return;
+
+        var chunkData = SystemAPI.GetComponent<ChunkData>(chunk);
+        chunkData.IsRefreshing = true;
+        state.EntityManager.SetComponentData(chunk, chunkData);
     }
 
     private bool ShouldBeLoaded(int2 chunkCoord, int2 playerChunk, int loadRadius)
