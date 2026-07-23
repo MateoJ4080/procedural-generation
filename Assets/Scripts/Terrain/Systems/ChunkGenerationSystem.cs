@@ -8,18 +8,18 @@ using Unity.Transforms;
 public partial struct ChunkGenerationSystem : ISystem
 {
     private TerrainConfig _lastConfig;
-    private NativeHashMap<int2, Entity> _chunks;
+    private NativeHashMap<int2, Entity> _loadedChunks;
     private int2 _lastPlayerChunk;
     private bool _hasLastPlayerChunk;
 
     public void OnCreate(ref SystemState state)
     {
-        _chunks = new NativeHashMap<int2, Entity>(100, Allocator.Persistent);
+        _loadedChunks = new NativeHashMap<int2, Entity>(100, Allocator.Persistent);
 
         // Create entity to hold global chunks data
         Entity e = state.EntityManager.CreateEntity();
         state.EntityManager.SetName(e, "ChunksGlobalData");
-        state.EntityManager.AddComponentData(e, new ChunksGlobalData { Chunks = _chunks });
+        state.EntityManager.AddComponentData(e, new ChunksGlobalData { Chunks = _loadedChunks });
     }
 
     public void OnUpdate(ref SystemState state)
@@ -60,7 +60,7 @@ public partial struct ChunkGenerationSystem : ISystem
             {
                 int2 chunkCoord = playerChunk + new int2(dx, dz);
 
-                if (!_chunks.ContainsKey(chunkCoord))
+                if (!_loadedChunks.ContainsKey(chunkCoord))
                 {
                     var entity = state.EntityManager.CreateEntity();
 
@@ -89,16 +89,31 @@ public partial struct ChunkGenerationSystem : ISystem
                     buffer.CopyFrom(blocks);
                     blocks.Dispose();
 
-                    _chunks.TryAdd(chunkCoord, entity);
+                    _loadedChunks.TryAdd(chunkCoord, entity);
 
                     // Save chunks map in single global data component
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
-                    state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _chunks });
+                    state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _loadedChunks });
 
                     RegenerateAdjacentChunks(entity, chunkCoord, ref state);
                 }
             }
         }
+        var chunksToUnload = new NativeList<int2>(Allocator.Temp);
+
+        foreach (var chunk in _loadedChunks)
+        {
+            if (!ShouldBeLoaded(chunk.Key, playerChunk, loadRadius))
+                chunksToUnload.Add(chunk.Key);
+        }
+
+        foreach (var chunkCoord in chunksToUnload)
+        {
+            state.EntityManager.DestroyEntity(_loadedChunks[chunkCoord]);
+            _loadedChunks.Remove(chunkCoord);
+        }
+
+        chunksToUnload.Dispose();
     }
 
     // To do: regenerate only the specific adjacent face instead of the whole chunk
@@ -108,25 +123,25 @@ public partial struct ChunkGenerationSystem : ISystem
 
         if (!chunkData.IsRefreshing)
         {
-            if (_chunks.TryGetValue(chunkCoord + new int2(-1, 0), out Entity leftChunk))
+            if (_loadedChunks.TryGetValue(chunkCoord + new int2(-1, 0), out Entity leftChunk))
             {
                 var leftChunkData = SystemAPI.GetComponent<ChunkData>(leftChunk);
                 leftChunkData.IsRefreshing = true;
                 state.EntityManager.SetComponentData(leftChunk, leftChunkData);
             }
-            if (_chunks.TryGetValue(chunkCoord + new int2(1, 0), out Entity rightChunk))
+            if (_loadedChunks.TryGetValue(chunkCoord + new int2(1, 0), out Entity rightChunk))
             {
                 var rightChunkData = SystemAPI.GetComponent<ChunkData>(rightChunk);
                 rightChunkData.IsRefreshing = true;
                 state.EntityManager.SetComponentData(rightChunk, rightChunkData);
             }
-            if (_chunks.TryGetValue(chunkCoord + new int2(0, -1), out Entity backChunk))
+            if (_loadedChunks.TryGetValue(chunkCoord + new int2(0, -1), out Entity backChunk))
             {
                 var backChunkData = SystemAPI.GetComponent<ChunkData>(backChunk);
                 backChunkData.IsRefreshing = true;
                 state.EntityManager.SetComponentData(backChunk, backChunkData);
             }
-            if (_chunks.TryGetValue(chunkCoord + new int2(0, 1), out Entity frontChunk))
+            if (_loadedChunks.TryGetValue(chunkCoord + new int2(0, 1), out Entity frontChunk))
             {
                 var frontChunkData = SystemAPI.GetComponent<ChunkData>(frontChunk);
                 frontChunkData.IsRefreshing = true;
@@ -135,19 +150,25 @@ public partial struct ChunkGenerationSystem : ISystem
         }
     }
 
-    public void OnDestroy(ref SystemState state)
+    private bool ShouldBeLoaded(int2 chunkCoord, int2 playerChunk, int loadRadius)
     {
-        if (_chunks.IsCreated) _chunks.Dispose();
+        return math.abs(chunkCoord.x - playerChunk.x) <= loadRadius &&
+               math.abs(chunkCoord.y - playerChunk.y) <= loadRadius;
     }
 
     // Clear chunks list if TerrainConfig is updated, allowing new generation in the OnUpdate
     private void RegenerateAllChunks(ref SystemState state, TerrainConfig config)
     {
-        foreach (var entity in _chunks.GetValueArray(Allocator.Temp))
+        foreach (var entity in _loadedChunks.GetValueArray(Allocator.Temp))
         {
             state.EntityManager.DestroyEntity(entity);
         }
 
-        _chunks.Clear();
+        _loadedChunks.Clear();
+    }
+
+    public void OnDestroy(ref SystemState state)
+    {
+        if (_loadedChunks.IsCreated) _loadedChunks.Dispose();
     }
 }
