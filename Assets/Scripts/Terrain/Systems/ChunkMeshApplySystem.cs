@@ -4,15 +4,14 @@ using Unity.Rendering;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Transforms;
-using System.Collections.Generic;
 
 public partial class ChunkMeshApplySystem : SystemBase
 {
-    private UnityEngine.Material _sharedMaterial;
+    private Material _sharedMaterial;
 
     protected override void OnCreate()
     {
-        _sharedMaterial = new UnityEngine.Material(Shader.Find("Universal Render Pipeline/Lit"));
+        _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         var atlas = Resources.Load<Texture2D>("WSUUw");
 
         if (_sharedMaterial == null)

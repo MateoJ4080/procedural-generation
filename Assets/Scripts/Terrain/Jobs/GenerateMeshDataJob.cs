@@ -102,10 +102,10 @@ public struct GenerateMeshDataJob : IJob
     {
         // "pos" is the position of the vertex at the bottom back left of the block, not its center
         // Vertices of the faces might not be set in sync with the UVs. Verify later.
-        if (right) AddRightFace(pos);
-        if (left) AddLeftFace(pos);
         if (top) AddTopFace(pos);
         if (bottom) AddBottomFace(pos);
+        if (right) AddRightFace(pos);
+        if (left) AddLeftFace(pos);
         if (front) AddFrontFace(pos);
         if (back) AddBackFace(pos);
     }
@@ -159,72 +159,6 @@ public struct GenerateMeshDataJob : IJob
         AddNormals(new float3(0, -1, 0));
     }
 
-    private void AddFrontFace(int3 pos)
-    {
-        // Render
-        var renderStart = RenderVertices.Length;
-
-        RenderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-        RenderVertices.Add(pos + new float3(1, 0, 1)); // Top left
-        RenderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-        RenderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
-
-        // *Has to be in same order as vertices to have the right orientation*
-        RenderUVs.Add(new float2(0.875f, 0.5f));
-        RenderUVs.Add(new float2(0.875f, 0.75f));
-        RenderUVs.Add(new float2(1, 0.75f));
-        RenderUVs.Add(new float2(1, 0.5f));
-
-        AddQuad(renderStart);
-        AddNormals(new float3(0, 0, 1));
-
-        // Collider
-        if (FrontArray.Length != 0)
-        {
-            int colliderStart = ColliderVertices.Length;
-
-            ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-            ColliderVertices.Add(pos + new float3(1, 0, 1)); // Top left
-            ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-            ColliderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
-
-            AddColliderQuad(colliderStart);
-        }
-    }
-
-    private void AddBackFace(int3 pos)
-    {
-        int renderStart = RenderVertices.Length;
-
-        // Render
-        RenderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-        RenderVertices.Add(pos + new float3(0, 0, 0)); // Top left
-        RenderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-        RenderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
-
-        // *Has to be in same order as vertices to have the right orientation*
-        RenderUVs.Add(new float2(0.875f, 0.5f));
-        RenderUVs.Add(new float2(0.875f, 0.75f));
-        RenderUVs.Add(new float2(1, 0.75f));
-        RenderUVs.Add(new float2(1, 0.5f));
-
-        AddQuad(renderStart);
-        AddNormals(new float3(0, 0, -1));
-
-        // Collider
-        if (BackArray.Length != 0)
-        {
-            int colliderStart = ColliderVertices.Length;
-
-            ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-            ColliderVertices.Add(pos + new float3(0, 0, 0)); // Top left
-            ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-            ColliderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
-
-            AddColliderQuad(colliderStart);
-        }
-    }
-
     private void AddRightFace(int3 pos)
     {
         int renderStart = RenderVertices.Length;
@@ -246,7 +180,7 @@ public struct GenerateMeshDataJob : IJob
 
         // Collider
 
-        if (RightArray.Length != 0)
+        if (RightArray.Length != 0 || pos.x != Depth - 1)
         {
             int colliderStart = ColliderVertices.Length;
 
@@ -279,7 +213,7 @@ public struct GenerateMeshDataJob : IJob
         AddNormals(new float3(-1, 0, 0));
 
         // Collider
-        if (LeftArray.Length != 0)
+        if (LeftArray.Length != 0 || pos.x != 0)
         {
             int colliderStart = ColliderVertices.Length;
 
@@ -287,6 +221,72 @@ public struct GenerateMeshDataJob : IJob
             ColliderVertices.Add(pos + new float3(0, 1, 1)); // Top left
             ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
             ColliderVertices.Add(pos + new float3(0, 0, 0)); // Bottom right
+
+            AddColliderQuad(colliderStart);
+        }
+    }
+
+    private void AddFrontFace(int3 pos)
+    {
+        // Render
+        var renderStart = RenderVertices.Length;
+
+        RenderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
+        RenderVertices.Add(pos + new float3(1, 0, 1)); // Top left
+        RenderVertices.Add(pos + new float3(1, 1, 1)); // Top right
+        RenderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
+
+        // *Has to be in same order as vertices to have the right orientation*
+        RenderUVs.Add(new float2(0.875f, 0.5f));
+        RenderUVs.Add(new float2(0.875f, 0.75f));
+        RenderUVs.Add(new float2(1, 0.75f));
+        RenderUVs.Add(new float2(1, 0.5f));
+
+        AddQuad(renderStart);
+        AddNormals(new float3(0, 0, 1));
+
+        // Collider
+        if (FrontArray.Length != 0 || pos.z != Depth - 1)
+        {
+            int colliderStart = ColliderVertices.Length;
+
+            ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
+            ColliderVertices.Add(pos + new float3(1, 0, 1)); // Top left
+            ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
+            ColliderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
+
+            AddColliderQuad(colliderStart);
+        }
+    }
+
+    private void AddBackFace(int3 pos)
+    {
+        int renderStart = RenderVertices.Length;
+
+        // Render
+        RenderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
+        RenderVertices.Add(pos + new float3(0, 0, 0)); // Top left
+        RenderVertices.Add(pos + new float3(0, 1, 0)); // Top right
+        RenderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+
+        // *Has to be in same order as vertices to have the right orientation*
+        RenderUVs.Add(new float2(0.875f, 0.5f));
+        RenderUVs.Add(new float2(0.875f, 0.75f));
+        RenderUVs.Add(new float2(1, 0.75f));
+        RenderUVs.Add(new float2(1, 0.5f));
+
+        AddQuad(renderStart);
+        AddNormals(new float3(0, 0, -1));
+
+        // Collider
+        if (BackArray.Length != 0 || pos.z != 0)
+        {
+            int colliderStart = ColliderVertices.Length;
+
+            ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
+            ColliderVertices.Add(pos + new float3(0, 0, 0)); // Top left
+            ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
+            ColliderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
 
             AddColliderQuad(colliderStart);
         }
