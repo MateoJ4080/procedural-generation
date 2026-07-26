@@ -29,6 +29,24 @@ public struct GenerateMeshDataJob : IJob
     public NativeArray<Block> BackArray;
     public NativeArray<Block> FrontArray;
 
+    public NativeList<Color32> RenderColors;
+
+    private static readonly float2[] TopUVs =
+    {
+    new(0.5f, 0.75f),
+    new(0.5f, 1f),
+    new(0.625f, 1f),
+    new(0.625f, 0.75f)
+};
+
+    private static readonly float2[] SideUVs =
+    {
+        new(0.875f, 0.5f),
+        new(0.875f, 0.75f),
+        new(1f, 0.75f),
+        new(1f, 0.5f)
+    };
+
     private static readonly ProfilerMarker ExecuteMarker = new("AddFacesJob Execute");
 
     public void Execute()
@@ -120,11 +138,7 @@ public struct GenerateMeshDataJob : IJob
         RenderVertices.Add(pos + new float3(1, 1, 0));
 
         // *Has to be in same order as vertices to have the right orientation*
-        RenderUVs.Add(new float2(0.5f, 0.75f));
-        RenderUVs.Add(new float2(0.5f, 1));
-        RenderUVs.Add(new float2(0.625f, 1));
-        RenderUVs.Add(new float2(0.625f, 0.75f));
-
+        AddUVs(TopUVs);
         AddQuad(renderStart);
         AddNormals(new float3(0, 1, 0));
 
@@ -149,11 +163,8 @@ public struct GenerateMeshDataJob : IJob
         RenderVertices.Add(pos + new float3(1, 0, 1));
         RenderVertices.Add(pos + new float3(0, 0, 1));
 
-        RenderUVs.Add(new float2(0.875f, 0.5f));
-        RenderUVs.Add(new float2(0.875f, 0.75f));
-        RenderUVs.Add(new float2(1, 0.75f));
-        RenderUVs.Add(new float2(1, 0.5f));
-
+        // *Has to be in same order as vertices to have the right orientation*
+        AddUVs(SideUVs);
         AddQuad(renderStart);
         AddNormals(new float3(0, -1, 0));
     }
@@ -169,11 +180,7 @@ public struct GenerateMeshDataJob : IJob
         RenderVertices.Add(pos + new float3(1, 0, 1));
 
         // *Has to be in same order as vertices to have the right orientation*
-        RenderUVs.Add(new float2(0.875f, 0.5f));
-        RenderUVs.Add(new float2(0.875f, 0.75f));
-        RenderUVs.Add(new float2(1, 0.75f));
-        RenderUVs.Add(new float2(1, 0.5f));
-
+        AddUVs(SideUVs);
         AddQuad(renderStart);
         AddNormals(new float3(1, 0, 0));
 
@@ -202,11 +209,7 @@ public struct GenerateMeshDataJob : IJob
         RenderVertices.Add(pos + new float3(0, 0, 0));
 
         // *Has to be in same order as vertices to have the right orientation*
-        RenderUVs.Add(new float2(0.875f, 0.5f));
-        RenderUVs.Add(new float2(0.875f, 0.75f));
-        RenderUVs.Add(new float2(1, 0.75f));
-        RenderUVs.Add(new float2(1, 0.5f));
-
+        AddUVs(SideUVs);
         AddQuad(renderStart);
         AddNormals(new float3(-1, 0, 0));
 
@@ -235,11 +238,7 @@ public struct GenerateMeshDataJob : IJob
         RenderVertices.Add(pos + new float3(0, 0, 1));
 
         // *Has to be in same order as vertices to have the right orientation*
-        RenderUVs.Add(new float2(0.875f, 0.5f));
-        RenderUVs.Add(new float2(0.875f, 0.75f));
-        RenderUVs.Add(new float2(1, 0.75f));
-        RenderUVs.Add(new float2(1, 0.5f));
-
+        AddUVs(SideUVs);
         AddQuad(renderStart);
         AddNormals(new float3(0, 0, 1));
 
@@ -268,11 +267,7 @@ public struct GenerateMeshDataJob : IJob
         RenderVertices.Add(pos + new float3(1, 0, 0));
 
         // *Has to be in same order as vertices to have the right orientation*
-        RenderUVs.Add(new float2(0.875f, 0.5f));
-        RenderUVs.Add(new float2(0.875f, 0.75f));
-        RenderUVs.Add(new float2(1, 0.75f));
-        RenderUVs.Add(new float2(1, 0.5f));
-
+        AddUVs(SideUVs);
         AddQuad(renderStart);
         AddNormals(new float3(0, 0, -1));
 
@@ -288,6 +283,12 @@ public struct GenerateMeshDataJob : IJob
 
             AddColliderQuad(colliderStart);
         }
+    private void AddUVs(float2[] uvs)
+    {
+        RenderUVs.Add(uvs[0]);
+        RenderUVs.Add(uvs[1]);
+        RenderUVs.Add(uvs[2]);
+        RenderUVs.Add(uvs[3]);
     }
 
     private void AddQuad(int start)
