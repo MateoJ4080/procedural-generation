@@ -101,7 +101,6 @@ public struct GenerateMeshDataJob : IJob
     void AddVisibleFaces(int3 pos, bool right, bool left, bool top, bool bottom, bool front, bool back)
     {
         // "pos" is the position of the vertex at the bottom back left of the block, not its center
-        // Vertices of the faces might not be set in sync with the UVs. Verify later.
         if (top) AddTopFace(pos);
         if (bottom) AddBottomFace(pos);
         if (right) AddRightFace(pos);
@@ -112,13 +111,13 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddTopFace(int3 pos)
     {
+        // Render
         int renderStart = RenderVertices.Length;
 
-        // Render
-        RenderVertices.Add(pos + new float3(0, 1, 0)); // Bottom left
-        RenderVertices.Add(pos + new float3(0, 1, 1)); // Top left
-        RenderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-        RenderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+        RenderVertices.Add(pos + new float3(0, 1, 0));
+        RenderVertices.Add(pos + new float3(0, 1, 1));
+        RenderVertices.Add(pos + new float3(1, 1, 1));
+        RenderVertices.Add(pos + new float3(1, 1, 0));
 
         // *Has to be in same order as vertices to have the right orientation*
         RenderUVs.Add(new float2(0.5f, 0.75f));
@@ -145,10 +144,10 @@ public struct GenerateMeshDataJob : IJob
         // Render
         int renderStart = RenderVertices.Length;
 
-        RenderVertices.Add(pos + new float3(0, 0, 1));
         RenderVertices.Add(pos + new float3(0, 0, 0));
         RenderVertices.Add(pos + new float3(1, 0, 0));
         RenderVertices.Add(pos + new float3(1, 0, 1));
+        RenderVertices.Add(pos + new float3(0, 0, 1));
 
         RenderUVs.Add(new float2(0.875f, 0.5f));
         RenderUVs.Add(new float2(0.875f, 0.75f));
@@ -161,13 +160,13 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddRightFace(int3 pos)
     {
+        // Render
         int renderStart = RenderVertices.Length;
 
-        // Render
-        RenderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-        RenderVertices.Add(pos + new float3(1, 1, 0)); // Top left
-        RenderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-        RenderVertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+        RenderVertices.Add(pos + new float3(1, 0, 0));
+        RenderVertices.Add(pos + new float3(1, 1, 0));
+        RenderVertices.Add(pos + new float3(1, 1, 1));
+        RenderVertices.Add(pos + new float3(1, 0, 1));
 
         // *Has to be in same order as vertices to have the right orientation*
         RenderUVs.Add(new float2(0.875f, 0.5f));
@@ -179,15 +178,14 @@ public struct GenerateMeshDataJob : IJob
         AddNormals(new float3(1, 0, 0));
 
         // Collider
-
         if (RightArray.Length != 0 || pos.x != Depth - 1)
         {
             int colliderStart = ColliderVertices.Length;
 
-            ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-            ColliderVertices.Add(pos + new float3(1, 1, 0)); // Top left
-            ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-            ColliderVertices.Add(pos + new float3(1, 0, 1)); // Bottom right
+            ColliderVertices.Add(pos + new float3(1, 0, 0));
+            ColliderVertices.Add(pos + new float3(1, 1, 0));
+            ColliderVertices.Add(pos + new float3(1, 1, 1));
+            ColliderVertices.Add(pos + new float3(1, 0, 1));
 
             AddColliderQuad(colliderStart);
         }
@@ -195,13 +193,13 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddLeftFace(int3 pos)
     {
+        // Render
         int renderStart = RenderVertices.Length;
 
-        // Render
-        RenderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-        RenderVertices.Add(pos + new float3(0, 1, 1)); // Top left
-        RenderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-        RenderVertices.Add(pos + new float3(0, 0, 0)); // Bottom right
+        RenderVertices.Add(pos + new float3(0, 0, 1));
+        RenderVertices.Add(pos + new float3(0, 1, 1));
+        RenderVertices.Add(pos + new float3(0, 1, 0));
+        RenderVertices.Add(pos + new float3(0, 0, 0));
 
         // *Has to be in same order as vertices to have the right orientation*
         RenderUVs.Add(new float2(0.875f, 0.5f));
@@ -217,10 +215,10 @@ public struct GenerateMeshDataJob : IJob
         {
             int colliderStart = ColliderVertices.Length;
 
-            ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-            ColliderVertices.Add(pos + new float3(0, 1, 1)); // Top left
-            ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-            ColliderVertices.Add(pos + new float3(0, 0, 0)); // Bottom right
+            ColliderVertices.Add(pos + new float3(0, 0, 1));
+            ColliderVertices.Add(pos + new float3(0, 1, 1));
+            ColliderVertices.Add(pos + new float3(0, 1, 0));
+            ColliderVertices.Add(pos + new float3(0, 0, 0));
 
             AddColliderQuad(colliderStart);
         }
@@ -231,10 +229,10 @@ public struct GenerateMeshDataJob : IJob
         // Render
         var renderStart = RenderVertices.Length;
 
-        RenderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-        RenderVertices.Add(pos + new float3(1, 0, 1)); // Top left
-        RenderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-        RenderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
+        RenderVertices.Add(pos + new float3(1, 0, 1));
+        RenderVertices.Add(pos + new float3(1, 1, 1));
+        RenderVertices.Add(pos + new float3(0, 1, 1));
+        RenderVertices.Add(pos + new float3(0, 0, 1));
 
         // *Has to be in same order as vertices to have the right orientation*
         RenderUVs.Add(new float2(0.875f, 0.5f));
@@ -250,10 +248,10 @@ public struct GenerateMeshDataJob : IJob
         {
             int colliderStart = ColliderVertices.Length;
 
-            ColliderVertices.Add(pos + new float3(0, 0, 1)); // Bottom left
-            ColliderVertices.Add(pos + new float3(1, 0, 1)); // Top left
-            ColliderVertices.Add(pos + new float3(1, 1, 1)); // Top right
-            ColliderVertices.Add(pos + new float3(0, 1, 1)); // Bottom right
+            ColliderVertices.Add(pos + new float3(1, 0, 1));
+            ColliderVertices.Add(pos + new float3(1, 1, 1));
+            ColliderVertices.Add(pos + new float3(0, 1, 1));
+            ColliderVertices.Add(pos + new float3(0, 0, 1));
 
             AddColliderQuad(colliderStart);
         }
@@ -261,13 +259,13 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddBackFace(int3 pos)
     {
+        // Render
         int renderStart = RenderVertices.Length;
 
-        // Render
-        RenderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-        RenderVertices.Add(pos + new float3(0, 0, 0)); // Top left
-        RenderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-        RenderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+        RenderVertices.Add(pos + new float3(0, 0, 0));
+        RenderVertices.Add(pos + new float3(0, 1, 0));
+        RenderVertices.Add(pos + new float3(1, 1, 0));
+        RenderVertices.Add(pos + new float3(1, 0, 0));
 
         // *Has to be in same order as vertices to have the right orientation*
         RenderUVs.Add(new float2(0.875f, 0.5f));
@@ -283,10 +281,10 @@ public struct GenerateMeshDataJob : IJob
         {
             int colliderStart = ColliderVertices.Length;
 
-            ColliderVertices.Add(pos + new float3(1, 0, 0)); // Bottom left
-            ColliderVertices.Add(pos + new float3(0, 0, 0)); // Top left
-            ColliderVertices.Add(pos + new float3(0, 1, 0)); // Top right
-            ColliderVertices.Add(pos + new float3(1, 1, 0)); // Bottom right
+            ColliderVertices.Add(pos + new float3(0, 0, 0));
+            ColliderVertices.Add(pos + new float3(0, 1, 0));
+            ColliderVertices.Add(pos + new float3(1, 1, 0));
+            ColliderVertices.Add(pos + new float3(1, 0, 0));
 
             AddColliderQuad(colliderStart);
         }
