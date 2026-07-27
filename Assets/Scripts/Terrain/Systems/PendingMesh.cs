@@ -2,6 +2,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 public struct PendingMesh
 {
@@ -25,6 +26,9 @@ public struct PendingMesh
     public NativeArray<Block> RightArray;
     public NativeArray<Block> BackArray;
     public NativeArray<Block> FrontArray;
+
+    // AO
+    public NativeList<Color32> RenderColors;
 
     public readonly void Dispose()
     {

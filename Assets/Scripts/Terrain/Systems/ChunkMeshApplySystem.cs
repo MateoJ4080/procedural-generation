@@ -11,7 +11,8 @@ public partial class ChunkMeshApplySystem : SystemBase
 
     protected override void OnCreate()
     {
-        _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        var shader = Shader.Find("Shader Graphs/VoxelAO_Shader");
+        _sharedMaterial = new Material(shader);
         var atlas = Resources.Load<Texture2D>("WSUUw");
 
         if (_sharedMaterial == null)
@@ -36,7 +37,7 @@ public partial class ChunkMeshApplySystem : SystemBase
 
     public void Apply(PendingMesh pending)
     {
-        // Check if it entity exists, otherwise vertices may try to work with a null one. They could've been destroyed in ChunkGenerationSystem > RegenerateAllChunks
+        // Check if the entity exists. Otherwise vertices may try to work with a null one, since they could've been destroyed in ChunkGenerationSystem > RegenerateAllChunks
         if (!EntityManager.Exists(pending.Entity) || pending.RenderVertices.Length == 0)
             return;
 
@@ -48,6 +49,7 @@ public partial class ChunkMeshApplySystem : SystemBase
         mesh.SetTriangles(pending.RenderTriangles.AsArray().ToArray(), 0);
         mesh.SetNormals(pending.RenderNormals.AsArray());
         mesh.SetUVs(0, pending.RenderUVs.AsArray());
+        if (DebugSettings.AmbientOclussion) mesh.SetColors(pending.RenderColors.AsArray());
         mesh.RecalculateBounds();
 
         var desc = new RenderMeshDescription(

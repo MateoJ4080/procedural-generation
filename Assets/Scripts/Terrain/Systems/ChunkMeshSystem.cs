@@ -5,6 +5,7 @@ using Unity.Rendering;
 using Unity.Jobs;
 using Unity.Transforms;
 using Unity.Physics;
+using UnityEngine;
 
 // UpdateAfter to wait for the chunk data
 [UpdateAfter(typeof(ChunkGenerationSystem))]
@@ -136,6 +137,8 @@ public partial class ChunkMeshSystem : SystemBase
         var colliderVertices = new NativeList<float3>(Allocator.TempJob);
         var colliderTriangles = new NativeList<int>(Allocator.TempJob);
 
+        var renderColors = new NativeList<Color32>(Allocator.TempJob);
+
         var meshDataJob = new GenerateMeshDataJob
         {
             ChunkPos = chunkPos,
@@ -157,6 +160,8 @@ public partial class ChunkMeshSystem : SystemBase
             RightArray = _rightArr,
             BackArray = _backArr,
             FrontArray = _frontArr,
+
+            RenderColors = renderColors
         };
 
         var jobHandle = meshDataJob.Schedule();
@@ -180,6 +185,8 @@ public partial class ChunkMeshSystem : SystemBase
             RightArray = _rightArr,
             BackArray = _backArr,
             FrontArray = _frontArr,
+
+            RenderColors = renderColors
         });
     }
 

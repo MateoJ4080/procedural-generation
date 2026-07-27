@@ -1,8 +1,10 @@
+using System;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
+using UnityEngine;
 
 [BurstCompile]
 public struct GenerateMeshDataJob : IJob
@@ -33,11 +35,11 @@ public struct GenerateMeshDataJob : IJob
 
     private static readonly float2[] TopUVs =
     {
-    new(0.5f, 0.75f),
-    new(0.5f, 1f),
-    new(0.625f, 1f),
-    new(0.625f, 0.75f)
-};
+        new(0.5f, 0.75f),
+        new(0.5f, 1f),
+        new(0.625f, 1f),
+        new(0.625f, 0.75f)
+    };
 
     private static readonly float2[] SideUVs =
     {
@@ -80,6 +82,9 @@ public struct GenerateMeshDataJob : IJob
 
     bool IsAir(int x, int y, int z)
     {
+        if ((x < 0 || x >= Width) && (z < 0 || z >= Depth))
+            return true;
+
         int index;
 
         if (x < 0)
@@ -151,6 +156,35 @@ public struct GenerateMeshDataJob : IJob
         ColliderVertices.Add(pos + new float3(1, 1, 0));
 
         AddColliderQuad(colliderStart);
+
+        // AO
+        if (DebugSettings.AmbientOclussion)
+        {
+            byte ao0 = VertexAO(
+                IsAir(pos.x - 1, pos.y + 1, pos.z),
+                IsAir(pos.x, pos.y + 1, pos.z - 1),
+                IsAir(pos.x - 1, pos.y + 1, pos.z - 1));
+
+            byte ao1 = VertexAO(
+                IsAir(pos.x - 1, pos.y + 1, pos.z),
+                IsAir(pos.x, pos.y + 1, pos.z + 1),
+                IsAir(pos.x - 1, pos.y + 1, pos.z + 1));
+
+            byte ao2 = VertexAO(
+                IsAir(pos.x + 1, pos.y + 1, pos.z),
+                IsAir(pos.x, pos.y + 1, pos.z + 1),
+                IsAir(pos.x + 1, pos.y + 1, pos.z + 1));
+
+            byte ao3 = VertexAO(
+                IsAir(pos.x + 1, pos.y + 1, pos.z),
+                IsAir(pos.x, pos.y + 1, pos.z - 1),
+                IsAir(pos.x + 1, pos.y + 1, pos.z - 1));
+
+            RenderColors.Add(new Color32(ao0, ao0, ao0, 255));
+            RenderColors.Add(new Color32(ao1, ao1, ao1, 255));
+            RenderColors.Add(new Color32(ao2, ao2, ao2, 255));
+            RenderColors.Add(new Color32(ao3, ao3, ao3, 255));
+        }
     }
 
     private void AddBottomFace(int3 pos)
@@ -167,6 +201,11 @@ public struct GenerateMeshDataJob : IJob
         AddUVs(SideUVs);
         AddQuad(renderStart);
         AddNormals(new float3(0, -1, 0));
+
+        RenderColors.Add(new Color32(255, 255, 255, 255));
+        RenderColors.Add(new Color32(255, 255, 255, 255));
+        RenderColors.Add(new Color32(255, 255, 255, 255));
+        RenderColors.Add(new Color32(255, 255, 255, 255));
     }
 
     private void AddRightFace(int3 pos)
@@ -195,6 +234,35 @@ public struct GenerateMeshDataJob : IJob
             ColliderVertices.Add(pos + new float3(1, 0, 1));
 
             AddColliderQuad(colliderStart);
+        }
+
+        // AO
+        if (DebugSettings.AmbientOclussion)
+        {
+            byte ao0 = VertexAO(
+                IsAir(pos.x + 1, pos.y - 1, pos.z),
+                IsAir(pos.x + 1, pos.y, pos.z - 1),
+                IsAir(pos.x + 1, pos.y - 1, pos.z - 1));
+
+            byte ao1 = VertexAO(
+                IsAir(pos.x + 1, pos.y + 1, pos.z),
+                IsAir(pos.x + 1, pos.y, pos.z - 1),
+                IsAir(pos.x + 1, pos.y + 1, pos.z - 1));
+
+            byte ao2 = VertexAO(
+                IsAir(pos.x + 1, pos.y + 1, pos.z),
+                IsAir(pos.x + 1, pos.y, pos.z + 1),
+                IsAir(pos.x + 1, pos.y + 1, pos.z + 1));
+
+            byte ao3 = VertexAO(
+                IsAir(pos.x + 1, pos.y - 1, pos.z),
+                IsAir(pos.x + 1, pos.y, pos.z + 1),
+                IsAir(pos.x + 1, pos.y - 1, pos.z + 1));
+
+            RenderColors.Add(new Color32(ao0, ao0, ao0, 255));
+            RenderColors.Add(new Color32(ao1, ao1, ao1, 255));
+            RenderColors.Add(new Color32(ao2, ao2, ao2, 255));
+            RenderColors.Add(new Color32(ao3, ao3, ao3, 255));
         }
     }
 
@@ -225,6 +293,35 @@ public struct GenerateMeshDataJob : IJob
 
             AddColliderQuad(colliderStart);
         }
+
+        // AO
+        if (DebugSettings.AmbientOclussion)
+        {
+            byte ao0 = VertexAO(
+                IsAir(pos.x - 1, pos.y - 1, pos.z),
+                IsAir(pos.x - 1, pos.y, pos.z + 1),
+                IsAir(pos.x - 1, pos.y - 1, pos.z + 1));
+
+            byte ao1 = VertexAO(
+                IsAir(pos.x - 1, pos.y + 1, pos.z),
+                IsAir(pos.x - 1, pos.y, pos.z + 1),
+                IsAir(pos.x - 1, pos.y + 1, pos.z + 1));
+
+            byte ao2 = VertexAO(
+                IsAir(pos.x - 1, pos.y + 1, pos.z),
+                IsAir(pos.x - 1, pos.y, pos.z - 1),
+                IsAir(pos.x - 1, pos.y + 1, pos.z - 1));
+
+            byte ao3 = VertexAO(
+                IsAir(pos.x - 1, pos.y - 1, pos.z),
+                IsAir(pos.x - 1, pos.y, pos.z - 1),
+                IsAir(pos.x - 1, pos.y - 1, pos.z - 1));
+
+            RenderColors.Add(new Color32(ao0, ao0, ao0, 255));
+            RenderColors.Add(new Color32(ao1, ao1, ao1, 255));
+            RenderColors.Add(new Color32(ao2, ao2, ao2, 255));
+            RenderColors.Add(new Color32(ao3, ao3, ao3, 255));
+        }
     }
 
     private void AddFrontFace(int3 pos)
@@ -253,6 +350,35 @@ public struct GenerateMeshDataJob : IJob
             ColliderVertices.Add(pos + new float3(0, 0, 1));
 
             AddColliderQuad(colliderStart);
+        }
+
+        if (DebugSettings.AmbientOclussion)
+        {
+            // AO
+            byte ao0 = VertexAO(
+                IsAir(pos.x, pos.y - 1, pos.z + 1),
+                IsAir(pos.x + 1, pos.y, pos.z + 1),
+                IsAir(pos.x + 1, pos.y - 1, pos.z + 1));
+
+            byte ao1 = VertexAO(
+                IsAir(pos.x, pos.y + 1, pos.z + 1),
+                IsAir(pos.x + 1, pos.y, pos.z + 1),
+                IsAir(pos.x + 1, pos.y + 1, pos.z + 1));
+
+            byte ao2 = VertexAO(
+                IsAir(pos.x, pos.y + 1, pos.z + 1),
+                IsAir(pos.x - 1, pos.y, pos.z + 1),
+                IsAir(pos.x - 1, pos.y + 1, pos.z + 1));
+
+            byte ao3 = VertexAO(
+                IsAir(pos.x, pos.y - 1, pos.z + 1),
+                IsAir(pos.x - 1, pos.y, pos.z + 1),
+                IsAir(pos.x - 1, pos.y - 1, pos.z + 1));
+
+            RenderColors.Add(new Color32(ao0, ao0, ao0, 255));
+            RenderColors.Add(new Color32(ao1, ao1, ao1, 255));
+            RenderColors.Add(new Color32(ao2, ao2, ao2, 255));
+            RenderColors.Add(new Color32(ao3, ao3, ao3, 255));
         }
     }
 
@@ -283,6 +409,37 @@ public struct GenerateMeshDataJob : IJob
 
             AddColliderQuad(colliderStart);
         }
+
+        // AO
+        if (DebugSettings.AmbientOclussion)
+        {
+            byte ao0 = VertexAO(
+                IsAir(pos.x, pos.y - 1, pos.z - 1),
+                IsAir(pos.x - 1, pos.y, pos.z - 1),
+                IsAir(pos.x - 1, pos.y - 1, pos.z - 1));
+
+            byte ao1 = VertexAO(
+                IsAir(pos.x, pos.y + 1, pos.z - 1),
+                IsAir(pos.x - 1, pos.y, pos.z - 1),
+                IsAir(pos.x - 1, pos.y + 1, pos.z - 1));
+
+            byte ao2 = VertexAO(
+                IsAir(pos.x, pos.y + 1, pos.z - 1),
+                IsAir(pos.x + 1, pos.y, pos.z - 1),
+                IsAir(pos.x + 1, pos.y + 1, pos.z - 1));
+
+            byte ao3 = VertexAO(
+                IsAir(pos.x, pos.y - 1, pos.z - 1),
+                IsAir(pos.x + 1, pos.y, pos.z - 1),
+                IsAir(pos.x + 1, pos.y - 1, pos.z - 1));
+
+            RenderColors.Add(new Color32(ao0, ao0, ao0, 255));
+            RenderColors.Add(new Color32(ao1, ao1, ao1, 255));
+            RenderColors.Add(new Color32(ao2, ao2, ao2, 255));
+            RenderColors.Add(new Color32(ao3, ao3, ao3, 255));
+        }
+    }
+
     private void AddUVs(float2[] uvs)
     {
         RenderUVs.Add(uvs[0]);
@@ -317,6 +474,27 @@ public struct GenerateMeshDataJob : IJob
         ColliderTriangles.Add(start + 0);
         ColliderTriangles.Add(start + 2);
         ColliderTriangles.Add(start + 3);
+    }
+
+    // Ambient Oclussion
+    static readonly byte[] AO =
+    {
+        150,
+        180,
+        220,
+        255
+    };
+
+    byte VertexAO(bool side1, bool side2, bool corner)
+    {
+        // side == true means there's air
+        bool s1 = !side1;
+        bool s2 = !side2;
+        bool c = !corner;
+
+        if (s1 && s2) return AO[0];
+
+        return AO[3 - (Convert.ToInt32(s1) + Convert.ToInt32(s2) + Convert.ToInt32(c))];
     }
 }
 
