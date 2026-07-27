@@ -49,7 +49,7 @@ public partial class ChunkMeshApplySystem : SystemBase
         mesh.SetTriangles(pending.RenderTriangles.AsArray().ToArray(), 0);
         mesh.SetNormals(pending.RenderNormals.AsArray());
         mesh.SetUVs(0, pending.RenderUVs.AsArray());
-        if (DebugSettings.AmbientOclussion) mesh.SetColors(pending.RenderColors.AsArray());
+        if (DebugSettings.AmbientOcclusion) mesh.SetColors(pending.RenderColors.AsArray());
         mesh.RecalculateBounds();
 
         var desc = new RenderMeshDescription(

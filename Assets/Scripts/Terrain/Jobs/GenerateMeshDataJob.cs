@@ -158,7 +158,7 @@ public struct GenerateMeshDataJob : IJob
         AddColliderQuad(colliderStart);
 
         // AO
-        if (DebugSettings.AmbientOclussion)
+        if (DebugSettings.AmbientOcclusion)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x - 1, pos.y + 1, pos.z),
@@ -237,7 +237,7 @@ public struct GenerateMeshDataJob : IJob
         }
 
         // AO
-        if (DebugSettings.AmbientOclussion)
+        if (DebugSettings.AmbientOcclusion)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x + 1, pos.y - 1, pos.z),
@@ -295,7 +295,7 @@ public struct GenerateMeshDataJob : IJob
         }
 
         // AO
-        if (DebugSettings.AmbientOclussion)
+        if (DebugSettings.AmbientOcclusion)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x - 1, pos.y - 1, pos.z),
@@ -352,7 +352,7 @@ public struct GenerateMeshDataJob : IJob
             AddColliderQuad(colliderStart);
         }
 
-        if (DebugSettings.AmbientOclussion)
+        if (DebugSettings.AmbientOcclusion)
         {
             // AO
             byte ao0 = VertexAO(
@@ -411,7 +411,7 @@ public struct GenerateMeshDataJob : IJob
         }
 
         // AO
-        if (DebugSettings.AmbientOclussion)
+        if (DebugSettings.AmbientOcclusion)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x, pos.y - 1, pos.z - 1),
