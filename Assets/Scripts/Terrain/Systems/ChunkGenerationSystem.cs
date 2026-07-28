@@ -51,7 +51,7 @@ public partial struct ChunkGenerationSystem : ISystem
         _lastPlayerChunk = playerChunk;
         _hasLastPlayerChunk = true;
 
-        int loadRadius = 7;
+        int loadRadius = 10;
 
         // Load new chunks based on player position
         for (int dx = -loadRadius; dx <= loadRadius; dx++)
