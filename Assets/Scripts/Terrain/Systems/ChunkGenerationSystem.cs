@@ -95,7 +95,7 @@ public partial struct ChunkGenerationSystem : ISystem
                     Entity chunkGlobalDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
                     state.EntityManager.SetComponentData(chunkGlobalDataEntity, new ChunksGlobalData { Chunks = _loadedChunks });
 
-                    RegenerateAdjacentChunks(chunkCoord, ref state);
+                    ReloadAdjacentChunks(chunkCoord, ref state);
                 }
             }
         }
@@ -109,7 +109,7 @@ public partial struct ChunkGenerationSystem : ISystem
 
         foreach (var chunkCoord in chunksToUnload)
         {
-            RegenerateAdjacentChunks(chunkCoord, ref state);
+            ReloadAdjacentChunks(chunkCoord, ref state);
 
             state.EntityManager.DestroyEntity(_loadedChunks[chunkCoord]);
             _loadedChunks.Remove(chunkCoord);
@@ -119,7 +119,7 @@ public partial struct ChunkGenerationSystem : ISystem
     }
 
     // To do: regenerate only the specific adjacent face instead of the whole chunk
-    private void RegenerateAdjacentChunks(int2 chunkCoord, ref SystemState state)
+    private void ReloadAdjacentChunks(int2 chunkCoord, ref SystemState state)
     {
         RefreshChunk(chunkCoord + new int2(-1, 0), ref state);
         RefreshChunk(chunkCoord + new int2(1, 0), ref state);
