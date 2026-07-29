@@ -121,13 +121,13 @@ public partial struct ChunkGenerationSystem : ISystem
     // To do: regenerate only the specific adjacent face instead of the whole chunk
     private void ReloadAdjacentChunks(int2 chunkCoord, ref SystemState state)
     {
-        RefreshChunk(chunkCoord + new int2(-1, 0), ref state);
-        RefreshChunk(chunkCoord + new int2(1, 0), ref state);
-        RefreshChunk(chunkCoord + new int2(0, -1), ref state);
-        RefreshChunk(chunkCoord + new int2(0, 1), ref state);
+        ReloadChunk(chunkCoord + new int2(-1, 0), ref state);
+        ReloadChunk(chunkCoord + new int2(1, 0), ref state);
+        ReloadChunk(chunkCoord + new int2(0, -1), ref state);
+        ReloadChunk(chunkCoord + new int2(0, 1), ref state);
     }
 
-    private void RefreshChunk(int2 chunkCoord, ref SystemState state)
+    private void ReloadChunk(int2 chunkCoord, ref SystemState state)
     {
         if (!_loadedChunks.TryGetValue(chunkCoord, out Entity chunk))
             return;
