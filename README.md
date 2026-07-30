@@ -3,8 +3,8 @@
 A procedural voxel terrain system built with Unity, C#, and Unity DOTS. Focused on performance and scalable world generation.
 
 <p align="center">
-  <img src="Media/FirstChunksLoaded.gif" width="49%">
-  <img src="Media/ProceduralGeneration.gif" width="49%">
+  <img src="Media/first-chunks-loaded.gif" width="49%">
+  <img src="Media/procedural-generation.gif" width="49%">
 </p>
 
 > **Note:** Recorded in the Unity Editor. Standalone builds run much faster.
