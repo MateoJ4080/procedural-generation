@@ -8,7 +8,7 @@ A procedural voxel terrain system built with Unity, C#, and Unity DOTS. Focused 
 </p>
 
 > **Note:** Recorded in the Unity Editor. Standalone builds run much faster.
-> 
+
 ## Features
 
 - Unity DOTS / ECS
