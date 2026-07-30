@@ -16,7 +16,7 @@ A procedural voxel terrain system built with Unity, C#, and Unity DOTS. Focused 
 - Chunk-based mesh generation
 - Multithreaded generation with Jobs + Burst
 - Runtime chunk loading/unloading
+- Ambient occlusion
 - Physics collision
-- Ambient Occlusion
  
 > Check out the [documentation](docs) for more details about the project's implementation.
