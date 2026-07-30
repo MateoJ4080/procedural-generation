@@ -45,7 +45,7 @@ public partial struct ChunkGenerationSystem : ISystem
 
         int2 playerChunk = new((int)(playerPos.x / 16), (int)(playerPos.z / 16));
 
-        if (_hasLastPlayerChunk && playerChunk.Equals(_lastPlayerChunk) && !terrainConfig.Equals(_lastConfig))
+        if (_hasLastPlayerChunk && playerChunk.Equals(_lastPlayerChunk))
             return;
 
         _lastPlayerChunk = playerChunk;
@@ -118,7 +118,6 @@ public partial struct ChunkGenerationSystem : ISystem
         chunksToUnload.Dispose();
     }
 
-    // To do: regenerate only the specific adjacent face instead of the whole chunk
     private void ReloadAdjacentChunks(int2 chunkCoord, ref SystemState state)
     {
         ReloadChunk(chunkCoord + new int2(-1, 0), ref state);

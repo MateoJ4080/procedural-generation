@@ -1,6 +1,4 @@
-using UnityEngine;
 using Unity.Entities;
-using System;
 using Unity.Mathematics;
 
 public struct PlayerTracker : IComponentData

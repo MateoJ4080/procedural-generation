@@ -32,7 +32,7 @@ public partial class ChunkColliderSystem : SystemBase
                             pending.ColliderTriangles[i * 3 + 2]);
                     }
 
-                    var collider = Unity.Physics.MeshCollider.Create(pending.ColliderVertices.AsArray(), trianglesInt3);
+                    var collider = MeshCollider.Create(pending.ColliderVertices.AsArray(), trianglesInt3);
 
                     trianglesInt3.Dispose();
 
@@ -47,9 +47,6 @@ public partial class ChunkColliderSystem : SystemBase
                         EntityManager.AddComponentData(pending.Entity, physicsCollider);
 
                     pending.Dispose();
-
-                    // var transform = SystemAPI.GetComponent<LocalTransform>(pending.Entity);
-                    // Debug.Log($"Collider generated for {transform.Position}");
                 }
             }
         }
