@@ -1,19 +1,11 @@
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Rendering;
 
 [UpdateAfter(typeof(ChunkGenerationSystem))]
 public partial struct ChunkRebuildSystem : ISystem
 {
-    private NativeHashMap<int2, Entity> _chunks;
-
-    public void OnCreate(ref SystemState state)
-    {
-        _chunks = SystemAPI.GetSingleton<ChunksGlobalData>().Chunks;
-    }
-
-    public void OnUpdate(ref SystemState state)
+    public readonly void OnUpdate(ref SystemState state)
     {
         var ecb = new EntityCommandBuffer(Allocator.Temp);
         foreach (var (chunkData, entity) in SystemAPI.Query<RefRW<ChunkData>>().WithEntityAccess())
