@@ -1,6 +1,6 @@
 ## Terrain Height Parameters
 
-### This document explains how each TerrainConfig parameter in [ChunkHeightJob](../Assets/Scripts/Terrain/Jobs/ChunkHeightJob.cs) affect the final terrain.
+### This document explains how each TerrainConfig parameter in [ChunkHeightJob](../Assets/Scripts/Terrain/Jobs/ChunkHeightJob.cs) affects the final terrain.
 
 Each parameter information will be splitted in two sections, marked by their respective emoji: 
 - What it does 💡
