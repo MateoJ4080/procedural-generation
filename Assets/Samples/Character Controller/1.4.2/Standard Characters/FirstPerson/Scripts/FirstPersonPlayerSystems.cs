@@ -37,6 +37,8 @@ public partial class FirstPersonPlayerInputsSystem : SystemBase
             {
                 playerInputs.ValueRW.JumpPressed.Set(tick);
             }
+            playerInputs.ValueRW.FlyDown = Keyboard.current.leftCtrlKey.isPressed;
+            playerInputs.ValueRW.FlyUp = Keyboard.current.spaceKey.isPressed;
         }
 #endif
     }
@@ -109,6 +111,10 @@ public partial struct FirstPersonPlayerFixedStepControlSystem : ISystem
 
                 // Jump
                 characterControl.Jump = playerInputs.ValueRO.JumpPressed.IsSet(tick);
+
+                // Fly
+                characterControl.FlyUp = playerInputs.ValueRO.FlyUp;
+                characterControl.FlyDown = playerInputs.ValueRO.FlyDown;
 
                 SystemAPI.SetComponent(player.ValueRO.ControlledCharacter, characterControl);
             }

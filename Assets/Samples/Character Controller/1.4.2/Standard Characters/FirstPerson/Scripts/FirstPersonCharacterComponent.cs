@@ -37,6 +37,9 @@ public struct FirstPersonCharacterControl : IComponentData
     public float3 MoveVector;
     public float2 LookDegreesDelta;
     public bool Jump;
+
+    public bool FlyUp;
+    public bool FlyDown;
 }
 
 [Serializable]

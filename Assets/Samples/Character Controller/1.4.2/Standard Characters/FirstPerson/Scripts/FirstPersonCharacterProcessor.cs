@@ -133,10 +133,10 @@ public struct FirstPersonCharacterProcessor : IKinematicCharacterProcessor<First
         {
             float3 flyVelocity = characterControl.MoveVector * characterComponent.HorizontalFlySpeed;
 
-            if (Keyboard.current.spaceKey.isPressed)
+            if (characterControl.FlyUp)
                 flyVelocity.y = characterComponent.VerticalFlySpeed;
 
-            else if (Keyboard.current.leftCtrlKey.isPressed)
+            else if (characterControl.FlyDown)
                 flyVelocity.y = -characterComponent.VerticalFlySpeed;
 
             characterBody.RelativeVelocity = flyVelocity;
