@@ -33,7 +33,7 @@ public struct GenerateMeshDataJob : IJob
 
     public NativeList<Color32> RenderColors;
 
-    private static readonly float2[] TopUVs =
+    private static readonly FixedList64Bytes<float2> TopUVs = new()
     {
         new(0.5f, 0.75f),
         new(0.5f, 1f),
@@ -41,7 +41,7 @@ public struct GenerateMeshDataJob : IJob
         new(0.625f, 0.75f)
     };
 
-    private static readonly float2[] SideUVs =
+    private static readonly FixedList64Bytes<float2> SideUVs = new()
     {
         new(0.875f, 0.5f),
         new(0.875f, 0.75f),
@@ -433,7 +433,7 @@ public struct GenerateMeshDataJob : IJob
     }
 
     // *Need to be in same order as vertices to have the right orientation*
-    private void AddUVs(float2[] uvs)
+    private void AddUVs(FixedList64Bytes<float2> uvs)
     {
         RenderUVs.Add(uvs[0]);
         RenderUVs.Add(uvs[1]);
