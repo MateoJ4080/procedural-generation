@@ -54,6 +54,9 @@ public class FirstPersonCharacterAuthoring : MonoBehaviour
                 ViewEntity = GetEntity(authoring.ViewEntity, TransformUsageFlags.Dynamic),
                 ViewPitchDegrees = 0f,
                 ViewLocalRotation = quaternion.identity,
+
+                HorizontalFlySpeed = 25,
+                VerticalFlySpeed = 15
             });
             AddComponent(entity, new FirstPersonCharacterControl());
             AddComponent(entity, new FirstPersonPlayerInputs());

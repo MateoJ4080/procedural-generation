@@ -1,7 +1,6 @@
 using System;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 using Unity.CharacterController;
 
 [Serializable]
@@ -26,6 +25,10 @@ public struct FirstPersonCharacterComponent : IComponentData
     public Entity ViewEntity;
     public float ViewPitchDegrees;
     public quaternion ViewLocalRotation;
+
+    public bool FlyMode;
+    public float HorizontalFlySpeed;
+    public float VerticalFlySpeed;
 }
 
 [Serializable]

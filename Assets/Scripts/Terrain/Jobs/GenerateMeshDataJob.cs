@@ -125,7 +125,7 @@ public struct GenerateMeshDataJob : IJob
     {
         // "pos" is the position of the vertex at the bottom back left of the block, not its center
         if (top) AddTopFace(pos);
-        if (bottom) AddBottomFace(pos);
+        // if (bottom) AddBottomFace(pos);
         if (right) AddRightFace(pos);
         if (left) AddLeftFace(pos);
         if (front) AddFrontFace(pos);

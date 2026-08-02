@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.CharacterController;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public struct FirstPersonCharacterUpdateContext
 {
@@ -127,6 +128,22 @@ public struct FirstPersonCharacterProcessor : IKinematicCharacterProcessor<First
         ref KinematicCharacterBody characterBody = ref CharacterDataAccess.CharacterBody.ValueRW;
         ref FirstPersonCharacterComponent characterComponent = ref CharacterComponent.ValueRW;
         ref FirstPersonCharacterControl characterControl = ref CharacterControl.ValueRW;
+
+        if (characterComponent.FlyMode)
+        {
+            float3 flyVelocity = characterControl.MoveVector * characterComponent.HorizontalFlySpeed;
+
+            if (Keyboard.current.spaceKey.isPressed)
+                flyVelocity.y = characterComponent.VerticalFlySpeed;
+
+            else if (Keyboard.current.leftCtrlKey.isPressed)
+                flyVelocity.y = -characterComponent.VerticalFlySpeed;
+
+            characterBody.RelativeVelocity = flyVelocity;
+            characterBody.IsGrounded = false;
+
+            return;
+        }
 
         // Rotate move input and velocity to take into account parent rotation
         if (characterBody.ParentEntity != Entity.Null)
