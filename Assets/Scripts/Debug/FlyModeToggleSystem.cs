@@ -26,7 +26,6 @@ public partial struct FlyModeToggleSystem : ISystem
             character.FlyMode = !character.FlyMode;
 
             SystemAPI.SetComponent(characterEntity, character);
-            UnityEngine.Debug.Log(character.FlyMode);
         }
     }
 }
