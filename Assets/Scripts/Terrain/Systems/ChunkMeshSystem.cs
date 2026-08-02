@@ -161,7 +161,9 @@ public partial class ChunkMeshSystem : SystemBase
             BackArray = _backArr,
             FrontArray = _frontArr,
 
-            RenderColors = renderColors
+            RenderColors = renderColors,
+
+            AmbientOcclusionEnabled = DebugSettings.AmbientOcclusion,
         };
 
         var jobHandle = meshDataJob.Schedule();

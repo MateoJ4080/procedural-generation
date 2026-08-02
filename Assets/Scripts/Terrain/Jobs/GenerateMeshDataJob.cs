@@ -33,6 +33,8 @@ public struct GenerateMeshDataJob : IJob
 
     public NativeList<Color32> RenderColors;
 
+    public bool AmbientOcclusionEnabled;
+
     private static readonly FixedList64Bytes<float2> TopUVs = new()
     {
         new(0.5f, 0.75f),
@@ -134,7 +136,7 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddTopFace(int3 pos)
     {
-        int3[] coords =
+        FixedList64Bytes<int3> coords = new()
         {
           new (pos + new float3(0, 1, 0)),
           new (pos + new float3(0, 1, 1)),
@@ -153,7 +155,7 @@ public struct GenerateMeshDataJob : IJob
         AddColliderQuad(colliderStart);
 
         // AO
-        if (DebugSettings.AmbientOcclusion)
+        if (AmbientOcclusionEnabled)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x - 1, pos.y + 1, pos.z),
@@ -184,7 +186,7 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddBottomFace(int3 pos)
     {
-        int3[] coords =
+        FixedList64Bytes<int3> coords = new()
         {
             new (pos + new float3(0, 0, 0)),
             new (pos + new float3(1, 0, 0)),
@@ -206,7 +208,7 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddRightFace(int3 pos)
     {
-        int3[] coords =
+        FixedList64Bytes<int3> coords = new()
         {
             new (pos + new float3(1, 0, 0)),
             new (pos + new float3(1, 1, 0)),
@@ -228,7 +230,7 @@ public struct GenerateMeshDataJob : IJob
         }
 
         // AO
-        if (DebugSettings.AmbientOcclusion)
+        if (AmbientOcclusionEnabled)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x + 1, pos.y - 1, pos.z),
@@ -259,7 +261,7 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddLeftFace(int3 pos)
     {
-        int3[] coords =
+        FixedList64Bytes<int3> coords = new()
         {
             new (pos + new float3(0, 0, 1)),
             new (pos + new float3(0, 1, 1)),
@@ -281,7 +283,7 @@ public struct GenerateMeshDataJob : IJob
         }
 
         // AO
-        if (DebugSettings.AmbientOcclusion)
+        if (AmbientOcclusionEnabled)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x - 1, pos.y - 1, pos.z),
@@ -312,7 +314,7 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddFrontFace(int3 pos)
     {
-        int3[] coords =
+        FixedList64Bytes<int3> coords = new()
         {
             new (pos + new float3(1, 0, 1)),
             new (pos + new float3(1, 1, 1)),
@@ -334,7 +336,7 @@ public struct GenerateMeshDataJob : IJob
         }
 
         // AO
-        if (DebugSettings.AmbientOcclusion)
+        if (AmbientOcclusionEnabled)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x, pos.y - 1, pos.z + 1),
@@ -365,7 +367,7 @@ public struct GenerateMeshDataJob : IJob
 
     private void AddBackFace(int3 pos)
     {
-        int3[] coords =
+        FixedList64Bytes<int3> coords = new()
         {
             new (pos + new float3(0, 0, 0)),
             new (pos + new float3(0, 1, 0)),
@@ -387,7 +389,7 @@ public struct GenerateMeshDataJob : IJob
         }
 
         // AO
-        if (DebugSettings.AmbientOcclusion)
+        if (AmbientOcclusionEnabled)
         {
             byte ao0 = VertexAO(
                 IsAir(pos.x, pos.y - 1, pos.z - 1),
@@ -416,7 +418,7 @@ public struct GenerateMeshDataJob : IJob
         }
     }
 
-    private void AddRenderVertices(int3[] coords)
+    private void AddRenderVertices(FixedList64Bytes<int3> coords)
     {
         RenderVertices.Add(coords[0]);
         RenderVertices.Add(coords[1]);
@@ -424,7 +426,7 @@ public struct GenerateMeshDataJob : IJob
         RenderVertices.Add(coords[3]);
     }
 
-    private void AddColliderVertices(int3[] coords)
+    private void AddColliderVertices(FixedList64Bytes<int3> coords)
     {
         ColliderVertices.Add(coords[0]);
         ColliderVertices.Add(coords[1]);
