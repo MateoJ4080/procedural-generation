@@ -42,6 +42,7 @@ ExportedObj/
 *.pidb
 *.booproj
 *.slx
+*.slnx
 *.svd
 *.pdb
 *.mdb
