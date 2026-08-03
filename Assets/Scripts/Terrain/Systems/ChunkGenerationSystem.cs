@@ -11,6 +11,7 @@ public partial struct ChunkGenerationSystem : ISystem
     private NativeHashMap<int2, Entity> _loadedChunks;
     private int2 _lastPlayerChunk;
     private bool _hasLastPlayerChunk;
+    private bool _reloadChunks;
 
     public void OnCreate(ref SystemState state)
     {
@@ -45,7 +46,7 @@ public partial struct ChunkGenerationSystem : ISystem
 
         int2 playerChunk = new((int)(playerPos.x / 16), (int)(playerPos.z / 16));
 
-        if (_hasLastPlayerChunk && playerChunk.Equals(_lastPlayerChunk))
+        if (_hasLastPlayerChunk && playerChunk.Equals(_lastPlayerChunk) && !_reloadChunks)
             return;
 
         _lastPlayerChunk = playerChunk;
@@ -151,6 +152,7 @@ public partial struct ChunkGenerationSystem : ISystem
         }
 
         _loadedChunks.Clear();
+        _reloadChunks = true;
     }
 
     public void OnDestroy(ref SystemState state)

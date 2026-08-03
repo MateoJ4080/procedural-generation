@@ -221,7 +221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f522f917fa844944fb5054939ab71476, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainConfigAuthoring
-  frequency: 0.02
+  frequency: 0.05
   amplitude: 0.43
   octaves: 1
   persistence: 0.1
