@@ -935,7 +935,7 @@ PlayerSettings:
   cloudProjectId: 6136055c-0e4b-4ccf-8532-879ba042d575
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Minecraft Clone
+  projectName: Procedural Generation
   organizationId: mateobssd
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
