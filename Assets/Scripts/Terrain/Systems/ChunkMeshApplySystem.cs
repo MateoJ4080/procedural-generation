@@ -53,8 +53,8 @@ public partial class ChunkMeshApplySystem : SystemBase
         mesh.RecalculateBounds();
 
         var desc = new RenderMeshDescription(
-            shadowCastingMode: ShadowCastingMode.Off,
-            receiveShadows: false
+            shadowCastingMode: ShadowCastingMode.On,
+            receiveShadows: true
         );
 
         var renderMeshArray = new RenderMeshArray(
