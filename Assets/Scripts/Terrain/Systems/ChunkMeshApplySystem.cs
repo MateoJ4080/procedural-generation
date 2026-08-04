@@ -4,6 +4,7 @@ using Unity.Rendering;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Transforms;
+using Unity.Mathematics;
 
 public partial class ChunkMeshApplySystem : SystemBase
 {
@@ -51,6 +52,22 @@ public partial class ChunkMeshApplySystem : SystemBase
         mesh.SetUVs(0, pending.RenderUVs.AsArray());
         if (DebugSettings.AmbientOcclusion) mesh.SetColors(pending.RenderColors.AsArray());
         mesh.RecalculateBounds();
+        mesh.RecalculateTangents();
+
+        if (DebugSettings.ShowNormals)
+        {
+            var chunkTransform = EntityManager.GetComponentData<LocalTransform>(pending.Entity);
+            float3 chunkPos = chunkTransform.Position;
+            for (int i = 0; i < pending.RenderVertices.Length; i++)
+            {
+                Debug.DrawRay(
+                    (Vector3)(chunkPos + pending.RenderVertices[i]),
+                    (Vector3)pending.RenderNormals[i] * 0.2f,
+                    Color.red,
+                    1000f
+                );
+            }
+        }
 
         var desc = new RenderMeshDescription(
             shadowCastingMode: ShadowCastingMode.On,
