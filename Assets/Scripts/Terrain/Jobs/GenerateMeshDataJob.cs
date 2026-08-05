@@ -43,12 +43,20 @@ public struct GenerateMeshDataJob : IJob
         new(1f, 0),
     };
 
-    private static readonly FixedList64Bytes<float2> SideUVs = new()
+    private static readonly FixedList64Bytes<float2> SideTopUVs = new()
     {
         new(0f, 0),
         new(0, 0.5f),
         new(0.5f, 0.5f),
         new(0.5f, 0),
+    };
+
+    private static readonly FixedList64Bytes<float2> SideUVs = new()
+    {
+        new(0.5f, 0.5f),
+        new(0.5f, 1),
+        new(1, 1),
+        new(1, 0.5f),
     };
 
     private static readonly ProfilerMarker ExecuteMarker = new("AddFacesJob Execute");
@@ -221,7 +229,7 @@ public struct GenerateMeshDataJob : IJob
 
         AddRenderVertices(coords);
         AddQuad(renderStart);
-        AddUVs(SideUVs);
+        AddUVs(GetSideUVs(pos));
         AddNormals(new int3(1, 0, 0));
         if (RightArray.Length != 0 || pos.x != Depth - 1)
         {
@@ -274,7 +282,7 @@ public struct GenerateMeshDataJob : IJob
 
         AddRenderVertices(coords);
         AddQuad(renderStart);
-        AddUVs(SideUVs);
+        AddUVs(GetSideUVs(pos));
         AddNormals(new int3(-1, 0, 0));
         if (LeftArray.Length != 0 || pos.x != 0)
         {
@@ -327,7 +335,7 @@ public struct GenerateMeshDataJob : IJob
 
         AddRenderVertices(coords);
         AddQuad(renderStart);
-        AddUVs(SideUVs);
+        AddUVs(GetSideUVs(pos));
         AddNormals(new int3(0, 0, 1));
         if (LeftArray.Length != 0 || pos.x != 0)
         {
@@ -380,7 +388,7 @@ public struct GenerateMeshDataJob : IJob
 
         AddRenderVertices(coords);
         AddQuad(renderStart);
-        AddUVs(SideUVs);
+        AddUVs(GetSideUVs(pos));
         AddNormals(new int3(0, 0, -1));
         if (BackArray.Length != 0 || pos.z != 0)
         {
@@ -441,6 +449,15 @@ public struct GenerateMeshDataJob : IJob
         RenderUVs.Add(uvs[1]);
         RenderUVs.Add(uvs[2]);
         RenderUVs.Add(uvs[3]);
+    }
+
+    private FixedList64Bytes<float2> GetSideUVs(int3 pos)
+    {
+        int index = pos.x + (pos.y + 1) * 16 + pos.z * 16 * 16;
+        bool hasBlockAbove = pos.y < 15 && BufferAsArray[index].Type != 0;
+
+        if (hasBlockAbove) return SideUVs;
+        else return SideTopUVs;
     }
 
     private void AddQuad(int start)
