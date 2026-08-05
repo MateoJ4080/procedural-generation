@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 95679508}
   - component: {fileID: 95679507}
   - component: {fileID: 95679511}
+  - component: {fileID: 95679512}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -269,6 +270,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef98a7c3224c6704d976c8bd33dfc59e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainGameObjectCamera
+--- !u!114 &95679512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 95679504}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 406cb070a9947bd4f9d5eb20d7e1d7a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CursorLock
 --- !u!1 &169279970
 GameObject:
   m_ObjectHideFlags: 0
@@ -458,7 +471,7 @@ Light:
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
-    m_Bias: 0.05
+    m_Bias: 1.85
     m_NormalBias: 0.4
     m_NearPlane: 0.2
     m_CullingMatrixOverride:
@@ -529,7 +542,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UsePipelineSettings: 1
+  m_UsePipelineSettings: 0
   m_AdditionalLightsShadowResolutionTier: 2
   m_CustomShadowLayers: 0
   m_LightCookieSize: {x: 1, y: 1}
