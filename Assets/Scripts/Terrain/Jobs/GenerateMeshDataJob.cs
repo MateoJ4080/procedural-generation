@@ -37,18 +37,18 @@ public struct GenerateMeshDataJob : IJob
 
     private static readonly FixedList64Bytes<float2> TopUVs = new()
     {
-        new(0.5f, 0.75f),
-        new(0.5f, 1f),
-        new(0.625f, 1f),
-        new(0.625f, 0.75f)
+        new(0.5f, 0),
+        new(0.5f, 0.5f),
+        new(1, 0.5f),
+        new(1f, 0),
     };
 
     private static readonly FixedList64Bytes<float2> SideUVs = new()
     {
-        new(0.875f, 0.5f),
-        new(0.875f, 0.75f),
-        new(1f, 0.75f),
-        new(1f, 0.5f)
+        new(0f, 0),
+        new(0, 0.5f),
+        new(0.5f, 0.5f),
+        new(0.5f, 0),
     };
 
     private static readonly ProfilerMarker ExecuteMarker = new("AddFacesJob Execute");
@@ -138,10 +138,10 @@ public struct GenerateMeshDataJob : IJob
     {
         FixedList64Bytes<int3> coords = new()
         {
-          new (pos + new float3(0, 1, 0)),
-          new (pos + new float3(0, 1, 1)),
-          new (pos + new float3(1, 1, 1)),
-          new (pos + new float3(1, 1, 0)),
+          new(pos + new float3(0, 1, 0)),
+          new(pos + new float3(0, 1, 1)),
+          new(pos + new float3(1, 1, 1)),
+          new(pos + new float3(1, 1, 0)),
         };
 
         int renderStart = RenderVertices.Length;
@@ -150,7 +150,7 @@ public struct GenerateMeshDataJob : IJob
         AddRenderVertices(coords);
         AddQuad(renderStart);
         AddUVs(TopUVs);
-        AddNormals(new float3(0, 1, 0));
+        AddNormals(new int3(0, 1, 0));
         AddColliderVertices(coords);
         AddColliderQuad(colliderStart);
 
@@ -188,17 +188,17 @@ public struct GenerateMeshDataJob : IJob
     {
         FixedList64Bytes<int3> coords = new()
         {
-            new (pos + new float3(0, 0, 0)),
-            new (pos + new float3(1, 0, 0)),
-            new (pos + new float3(1, 0, 1)),
-            new (pos + new float3(0, 0, 1)),
+            new(pos + new float3(0, 0, 0)),
+            new(pos + new float3(1, 0, 0)),
+            new(pos + new float3(1, 0, 1)),
+            new(pos + new float3(0, 0, 1)),
         };
 
         int renderStart = RenderVertices.Length;
         AddRenderVertices(coords);
         AddQuad(renderStart);
         AddUVs(SideUVs);
-        AddNormals(new float3(0, -1, 0));
+        AddNormals(new int3(0, -1, 0));
 
         RenderColors.Add(new Color32(255, 255, 255, 255));
         RenderColors.Add(new Color32(255, 255, 255, 255));
@@ -222,7 +222,7 @@ public struct GenerateMeshDataJob : IJob
         AddRenderVertices(coords);
         AddQuad(renderStart);
         AddUVs(SideUVs);
-        AddNormals(new float3(1, 0, 0));
+        AddNormals(new int3(1, 0, 0));
         if (RightArray.Length != 0 || pos.x != Depth - 1)
         {
             AddColliderVertices(coords);
@@ -263,10 +263,10 @@ public struct GenerateMeshDataJob : IJob
     {
         FixedList64Bytes<int3> coords = new()
         {
-            new (pos + new float3(0, 0, 1)),
-            new (pos + new float3(0, 1, 1)),
-            new (pos + new float3(0, 1, 0)),
-            new (pos + new float3(0, 0, 0)),
+            new(pos + new float3(0, 0, 1)),
+            new(pos + new float3(0, 1, 1)),
+            new(pos + new float3(0, 1, 0)),
+            new(pos + new float3(0, 0, 0)),
         };
 
         int renderStart = RenderVertices.Length;
@@ -275,7 +275,7 @@ public struct GenerateMeshDataJob : IJob
         AddRenderVertices(coords);
         AddQuad(renderStart);
         AddUVs(SideUVs);
-        AddNormals(new float3(-1, 0, 0));
+        AddNormals(new int3(-1, 0, 0));
         if (LeftArray.Length != 0 || pos.x != 0)
         {
             AddColliderVertices(coords);
@@ -316,10 +316,10 @@ public struct GenerateMeshDataJob : IJob
     {
         FixedList64Bytes<int3> coords = new()
         {
-            new (pos + new float3(1, 0, 1)),
-            new (pos + new float3(1, 1, 1)),
-            new (pos + new float3(0, 1, 1)),
-            new (pos + new float3(0, 0, 1)),
+            new(pos + new float3(1, 0, 1)),
+            new(pos + new float3(1, 1, 1)),
+            new(pos + new float3(0, 1, 1)),
+            new(pos + new float3(0, 0, 1)),
         };
 
         var renderStart = RenderVertices.Length;
@@ -328,7 +328,7 @@ public struct GenerateMeshDataJob : IJob
         AddRenderVertices(coords);
         AddQuad(renderStart);
         AddUVs(SideUVs);
-        AddNormals(new float3(0, 0, 1));
+        AddNormals(new int3(0, 0, 1));
         if (LeftArray.Length != 0 || pos.x != 0)
         {
             AddColliderVertices(coords);
@@ -369,10 +369,10 @@ public struct GenerateMeshDataJob : IJob
     {
         FixedList64Bytes<int3> coords = new()
         {
-            new (pos + new float3(0, 0, 0)),
-            new (pos + new float3(0, 1, 0)),
-            new (pos + new float3(1, 1, 0)),
-            new (pos + new float3(1, 0, 0)),
+            new(pos + new float3(0, 0, 0)),
+            new(pos + new float3(0, 1, 0)),
+            new(pos + new float3(1, 1, 0)),
+            new(pos + new float3(1, 0, 0)),
         };
 
         int renderStart = RenderVertices.Length;
@@ -381,7 +381,7 @@ public struct GenerateMeshDataJob : IJob
         AddRenderVertices(coords);
         AddQuad(renderStart);
         AddUVs(SideUVs);
-        AddNormals(new float3(0, 0, -1));
+        AddNormals(new int3(0, 0, -1));
         if (BackArray.Length != 0 || pos.z != 0)
         {
             AddColliderVertices(coords);
@@ -453,7 +453,7 @@ public struct GenerateMeshDataJob : IJob
         RenderTriangles.Add(start + 3);
     }
 
-    private void AddNormals(float3 normal)
+    private void AddNormals(int3 normal)
     {
         RenderNormals.Add(normal);
         RenderNormals.Add(normal);

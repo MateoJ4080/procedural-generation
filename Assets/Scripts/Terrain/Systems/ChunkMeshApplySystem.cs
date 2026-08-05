@@ -14,7 +14,7 @@ public partial class ChunkMeshApplySystem : SystemBase
     {
         var shader = Shader.Find("Shader Graphs/VoxelAO_Shader");
         _sharedMaterial = new Material(shader);
-        var atlas = Resources.Load<Texture2D>("WSUUw");
+        var atlas = Resources.Load<Texture2D>("terrain-atlas-01");
 
         if (_sharedMaterial == null)
         {
