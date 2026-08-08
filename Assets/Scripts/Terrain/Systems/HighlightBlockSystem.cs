@@ -6,13 +6,18 @@ public partial struct HighlightBlockSystem : ISystem
 {
     private Entity highlight;
 
+    public readonly void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<HighlightTag>();
+        state.RequireForUpdate<HoveredBlock>();
+    }
+
     public void OnUpdate(ref SystemState state)
     {
         if (highlight == Entity.Null)
             highlight = SystemAPI.GetSingletonEntity<HighlightTag>();
 
         var hovered = SystemAPI.GetSingletonRW<HoveredBlock>();
-
         var transform = SystemAPI.GetComponentRW<LocalTransform>(highlight);
 
         if (hovered.ValueRO.Chunk == Entity.Null)

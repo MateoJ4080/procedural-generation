@@ -15,6 +15,7 @@ public partial struct ChunkGenerationSystem : ISystem
 
     public void OnCreate(ref SystemState state)
     {
+        state.RequireForUpdate<PlayerTag>();
         _loadedChunks = new NativeHashMap<int2, Entity>(100, Allocator.Persistent);
 
         // Create entity to hold global chunks data

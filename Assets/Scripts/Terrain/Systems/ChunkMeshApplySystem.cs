@@ -13,14 +13,16 @@ public partial class ChunkMeshApplySystem : SystemBase
     protected override void OnCreate()
     {
         var shader = Shader.Find("Shader Graphs/VoxelAO_Shader");
+
+        if (shader == null)
+        {
+            Debug.LogError("VoxelAO_Shader not found");
+            return;
+        }
+
         _sharedMaterial = new Material(shader);
         var atlas = Resources.Load<Texture2D>("terrain-atlas-01");
 
-        if (_sharedMaterial == null)
-        {
-            Debug.LogError("Shader not found");
-            return;
-        }
         if (atlas == null)
         {
             Debug.Log("Atlas not found");

@@ -1,6 +1,11 @@
 using Unity.Entities;
 public partial struct PlayerControllerSystem : ISystem
 {
+    public readonly void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<PlayerTag>();
+    }
+
     public void OnUpdate(ref SystemState state)
     {
         var playerEntity = SystemAPI.GetSingletonEntity<PlayerTag>();

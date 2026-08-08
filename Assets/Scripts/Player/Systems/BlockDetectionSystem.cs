@@ -5,13 +5,20 @@ using Unity.Transforms;
 
 public partial struct BlockDetectionSystem : ISystem
 {
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<PhysicsWorldSingleton>();
+        state.RequireForUpdate<PlayerTag>();
+        state.RequireForUpdate<PlayerViewTag>();
+    }
+
     public void OnUpdate(ref SystemState state)
     {
         var em = state.EntityManager;
 
         var collisionWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>().CollisionWorld;
-        var viewEntity = SystemAPI.GetSingletonEntity<PlayerViewTag>();
         var playerEntity = SystemAPI.GetSingletonEntity<PlayerTag>();
+        var viewEntity = SystemAPI.GetSingletonEntity<PlayerViewTag>();
 
         var viewTransform = em.GetComponentData<LocalToWorld>(viewEntity);
         var characterData = em.GetComponentData<FirstPersonCharacterComponent>(playerEntity);

@@ -8,6 +8,7 @@ public class PlayerInputBridge : MonoBehaviour
 
     private EntityManager em;
     private Entity playerEntity;
+    private bool initialized;
 
     void Awake()
     {
@@ -22,13 +23,19 @@ public class PlayerInputBridge : MonoBehaviour
         controls.Disable();
     }
 
-    void Start()
-    {
-        playerEntity = em.CreateEntityQuery(typeof(PlayerTag)).GetSingletonEntity();
-    }
-
     void Update()
     {
+        if (!initialized)
+        {
+            var query = em.CreateEntityQuery(typeof(PlayerTag));
+
+            if (query.IsEmpty)
+                return;
+
+            playerEntity = query.GetSingletonEntity();
+            initialized = true;
+        }
+
         float2 moveInput = (float2)controls.Player.Move.ReadValue<Vector2>();
         float2 lookInput = (float2)controls.Player.Look.ReadValue<Vector2>();
 

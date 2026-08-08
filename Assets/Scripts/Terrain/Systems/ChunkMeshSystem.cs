@@ -27,8 +27,10 @@ public partial class ChunkMeshSystem : SystemBase
 
     protected override void OnCreate()
     {
-        _pendingMeshes = new NativeList<PendingMesh>(Allocator.Persistent);
+        RequireForUpdate<ChunksGlobalData>();
+        RequireForUpdate<PlayerTag>();
 
+        _pendingMeshes = new NativeList<PendingMesh>(Allocator.Persistent);
         _globalChunkDataEntity = SystemAPI.GetSingletonEntity<ChunksGlobalData>();
     }
 
